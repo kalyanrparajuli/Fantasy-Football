@@ -10,3 +10,7 @@ A hierarchal Bayesian model for player's individual performances (minutes played
 
 ### Optimization Model
 A simulator, based on both the team and player models, for the expected points of any given player for any set of fixtures.
+
+---------------------
+# Data Credit:
+Available from `https://github.com/vaastav/Fantasy-Premier-League/tree/master/data'
