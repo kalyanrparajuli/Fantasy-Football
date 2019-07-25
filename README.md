@@ -32,5 +32,11 @@ Using the parameters (trained and updated as described above) for the team and p
 
 ---------------------
 
+## Analysis of Performance for the 2018/2019 Season
+
+![Screenshot](images/exp_points_vs_actual_20182019.png)
+
+---------------------
+
 #### Data Credit:
 Available from `https://github.com/vaastav/Fantasy-Premier-League/tree/master/data'
