@@ -36,6 +36,8 @@ Using the parameters (trained and updated as described above) for the team and p
 
 ![Screenshot](images/exp_points_vs_actual_20182019.png)
 
+In this image, the accuracy of expected points (relative to actual player points) during the 2018/2019 season is shown - with standard error bars. Black points denote goalkeepers, blue points denote defenders, green points denote midfielders and red points denote forwards.
+
 ---------------------
 
 #### Data Credit:
