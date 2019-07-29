@@ -19,7 +19,6 @@ def update_team_model(prem_results, N, save_to_csv):
 	
 	# read fixture list
     fixture_list_this_week = import_fixture_list(prem_results)
-    fixture_list_this_week = fixture_list_this_week.loc[:10, :]
 
     # read params and teams
     all_teams_params = pd.read_csv("../parameters/all_teams_params.csv", header=None)
