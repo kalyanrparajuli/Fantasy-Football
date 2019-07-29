@@ -27,7 +27,7 @@ The team model is trained initially on the previous three seasons of the Premier
 After each game-week, the team model parameters are updated by using a particle filter step, where the likelihood is based on the current game-week's results. The player model parameters are updated (incorporating a forgetting factor) using standard analytical Bayesian inference.
 
 To run the update script:
-- python models/update_models.py <csv_filename_for_gw_results> <number of particles> <save to csv?> <csv_filename_for_gw_player_performances> <csv_filename_for_all_season_player_data> <forgetting factor>
+- python models/update_models.py <csv_filename_for_gw_results> <number_of_particles> <save_to_csv?> <csv_filename_for_gw_player_performances> <csv_filename_for_all_season_player_data> <forgetting_factor>
 
 --------------------
 
