@@ -12,6 +12,8 @@ A hierarchal Bayesian model for player's individual performances (minutes played
 ### Optimization Model
 A simulator, based on both the team and player models, for the expected points of any given player for any set of fixtures.
 
+The training for each model on historical data (see section below) is implemented in the corresponding `ipynb` scripts.
+
 ---------------------
 
 ## Training
@@ -23,6 +25,9 @@ The team model is trained initially on the previous three seasons of the Premier
 ## Model Updating
 
 After each game-week, the team model parameters are updated by using a particle filter step, where the likelihood is based on the current game-week's results. The player model parameters are updated (incorporating a forgetting factor) using standard analytical Bayesian inference.
+
+To run the update script:
+- python models/update_models.py <csv_filename_for_gw_results> <number of particles> <save to csv?> <csv_filename_for_gw_player_performances> <csv_filename_for_all_season_player_data> <forgetting factor>
 
 --------------------
 
