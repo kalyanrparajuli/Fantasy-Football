@@ -45,5 +45,11 @@ In this image, the accuracy of expected points (relative to actual player points
 
 ---------------------
 
+## Draft Fantasy Football Data
+
+In addition to the data from the Official FPL site, the script `get_api.py` can be used to gather and update data specific to Draft Fantasy Football on every player from gameweek-to-gameweek.
+
+----------------------------------
+
 #### Data Credit:
 Available from `https://github.com/vaastav/Fantasy-Premier-League/tree/master/data'
