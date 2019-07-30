@@ -47,7 +47,8 @@ In this image, the accuracy of expected points (relative to actual player points
 
 ## Draft Fantasy Football Data
 
-In addition to the data from the Official FPL site, the script `get_api.py` can be used to gather and update data specific to Draft Fantasy Football on every player from gameweek-to-gameweek.
+In addition to the data from the Official FPL site, data specific to Draft Fantasy Football on every player from gameweek-to-gameweek can be gathered. To update cumulative season data, and collect data specific to a gameweek run the script:
+- `python extract_gw_draft_data.py <game_week>`
 
 ----------------------------------
 
