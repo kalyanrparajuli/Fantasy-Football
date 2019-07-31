@@ -27,7 +27,7 @@ The team model is trained initially on the previous three seasons of the Premier
 After each game-week, the team model parameters are updated by using a particle filter step, where the likelihood is based on the current game-week's results. The player model parameters are updated (incorporating a forgetting factor) using standard analytical Bayesian inference.
 
 To run the update script:
-- python models/update_models.py <csv_filename_for_gw_results> <number_of_particles> <save_to_csv?> <csv_filename_for_gw_player_performances> <csv_filename_for_all_season_player_data> <forgetting_factor>
+- python models/update_models.py <csv_filename_for_gw_results> <csv_filename_for_form> <number_of_particles> <save_to_csv?> <csv_filename_for_gw_player_performances> <csv_filename_for_all_season_player_data> <forgetting_factor>
 
 --------------------
 
@@ -49,6 +49,8 @@ In this image, the accuracy of expected points (relative to actual player points
 
 In addition to the data from the Official FPL site, data specific to Draft Fantasy Football on every player from gameweek-to-gameweek can be gathered. To update cumulative season data, and collect data specific to a gameweek run the script:
 - `python extract_gw_draft_data.py <game_week>`
+To obtain player id's for a given team, run the script:
+- `python get_team_api.py <league_id> <game_week> <team_id>
 
 ----------------------------------
 

@@ -311,45 +311,6 @@ def team_code(team_code, season="2016/2017"):
             teams.append(codes.loc[codes.index[np.where(codes['id'] == team_code[i])[0][0]], 'Team'])
     return(np.array(teams))
 
-# Assign player id
-def player_id(data):
-    ID = []
-    players = []
-    teams = []
-    positions = []
-    season = []
-    count = 0
-    for i in range(np.shape(data)[0]):
-        iid = np.where(str(data[i, 61]) == np.array(players))[0]
-        #new_count = 0
-        a = 0
-        if len(iid) >= 1:
-            #for j in range(len(iid)):
-            # conservative matching of players - same position, team and name
-            #if (np.array(teams)[iid[j]] == str(data[i, 58])) and (np.array(positions)[iid[j]] == str(data[i, 64])) and new_count == 0:
-            ID.append(ID[iid[0]])
-            players.append(data[i, 61])
-            teams.append(data[i, 58])
-            positions.append(data[i, 64])
-            season.append(data[i, 62])
-            #new_count = 1
-            #if new_count == 0:  # guinely new player
-            #ID.append(i)
-            #players.append(data[i, 61])
-            #teams.append(data[i, 58])
-            #positions.append(data[i, 64])
-            #season.append(data[i, 62])
-            #count += 1
-        else:
-            ID.append(count)
-            players.append(data[i, 61])
-            teams.append(data[i, 58])
-            positions.append(data[i, 64])
-            season.append(data[i, 62])
-            count += 1
-            
-    return(ID, players, teams, positions, season)
-
 def update_goals_simplex(prior_a, prior_b, goals_perc, games, ff=1):
     return((prior_a * ff) + (goals_perc * games), (prior_b * ff) + games - (goals_perc * games))
 
