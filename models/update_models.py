@@ -15,10 +15,11 @@ from priors import *
 
 ' Update team model '
 
-def update_team_model(prem_results, N, save_to_csv):
+def update_team_model(prem_results, form_file, N, save_to_csv):
 	
 	# read fixture list
     fixture_list_this_week = import_fixture_list(prem_results)
+    form = import_fixture_list(form_file)
 
     # read params and teams
     all_teams_params = pd.read_csv("../parameters/all_teams_params.csv", header=None)
@@ -40,7 +41,7 @@ def update_team_model(prem_results, N, save_to_csv):
             d_at = params[1 + len(teams) + np.where(teams == fixture_list_this_week.loc[fixture_list_this_week.index[j], 1])[0], i]
             xi[i] += np.log(likelihood_one_game(fixture_list_this_week.loc[fixture_list_this_week.index[j], 2],
                                                 fixture_list_this_week.loc[fixture_list_this_week.index[j], 3],
-                                                5, 5, params[0, i], a_ht, d_ht, a_at, d_at, params[-1, i]))
+                                                form.loc[form.index[j], 0], form.loc[form.index[j], 1], params[0, i], a_ht, d_ht, a_at, d_at, params[-1, i]))
     
     resampled = np.random.choice(np.linspace(0, N - 1, N), N, p=np.exp(xi) / np.sum(np.exp(xi)))
     resampled_params = params[:, resampled.astype(int)]
@@ -65,43 +66,35 @@ def update_player_model(game_week_file, raw_player_data, ff):
     all_players_parameters = pd.read_csv("../parameters/all_players_params.csv")
 	
     # read raw gw data
-    data = []
-    with open(game_week_file) as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter=',')
-        for i, row in enumerate(csv_reader):
-            if i > 0:
-                data.append(row)
-    dataraw = np.array(data)
+    dataraw = pd.read_csv(game_week_file)
 
     # find id of players in gw data
-    ids = []
-    for i in range(np.shape(dataraw)[0]):
-        ids.append(int(dataraw[i, 0].split("_")[-1]))
+    ids = dataraw['_id']
 
     # match these ids to player raw data (with correct format names, corresponding to players parameters data frame)
     # this raw data needs to be same as this season
     name_data = pd.read_csv(raw_player_data)
-    name_data['team_name'] = team_code(name_data['team'], season="2019/2020")
+    name_data['team_name'] = team_code(name_data['team_id'], season="2019/2020")
+	
     p = []
     for i in range(len(name_data.index)):
-        p.append(np.array(['GKP', 'DEF', 'MID', 'FWD'])[int(name_data.loc[name_data.index[i], "element_type"] - 1)])
+        p.append(np.array(['GKP', 'DEF', 'MID', 'FWD'])[int(name_data.loc[name_data.index[i], "element_type_id"] - 1)])
     name_data['position'] = p
 
     corr_names = []
     corr_positions = []
     corr_teams = []
     for i in range(len(ids)):
-        corr_names.append(name_data.loc[name_data.index[np.where(name_data.loc[:, 'id'] == ids[i])[0][0]], 'first_name'] + ' ' + name_data.loc[name_data.index[np.where(name_data.loc[:, 'id'] == ids[i])[0][0]], 'second_name'])
-        corr_positions.append(name_data.loc[name_data.index[np.where(name_data.loc[:, 'id'] == ids[i])[0][0]], 'position'])
-        corr_teams.append(name_data.loc[name_data.index[np.where(name_data.loc[:, 'id'] == ids[i])[0][0]], 'team_name'])
+        corr_names.append(name_data.loc[name_data.index[np.where(name_data.loc[:, '_id'] == ids[i])[0][0]], 'first_name'] + ' ' + name_data.loc[name_data.index[np.where(name_data.loc[:, '_id'] == ids[i])[0][0]], 'second_name'])
+        corr_positions.append(name_data.loc[name_data.index[np.where(name_data.loc[:, '_id'] == ids[i])[0][0]], 'position'])
+        corr_teams.append(name_data.loc[name_data.index[np.where(name_data.loc[:, '_id'] == ids[i])[0][0]], 'team_name'])
 
     # finally revise dataraw
-    data = pd.read_csv(game_week_file, usecols=range(1, 54))  # WILL NEED TO CHANGE WITH RESPECT TO NEW GW-GW FORMAT
+    data = pd.read_csv(game_week_file)
     data['name'] = corr_names
     data['position'] = corr_positions
     data['team'] = corr_teams
 	
-    current_ID_count = np.max(all_players_parameters['ID'].values) + 1
     for i in range(len(data.index)):
     
         # in data, search for matches in all_players params, if not found, append row to all players paramas and set with priors
@@ -112,7 +105,7 @@ def update_player_model(game_week_file, raw_player_data, ff):
         if len(ind) == 0:
 
             # set new ID
-            idnew = current_ID_count
+            idnew = data.loc[data.index[i], "_id"]
             teamnew = data.loc[data.index[i], 'team']
             positionnew = data.loc[data.index[i], 'position']
             namenew = data.loc[data.index[i], 'name']
@@ -132,17 +125,14 @@ def update_player_model(game_week_file, raw_player_data, ff):
                 all_players_parameters = all_players_parameters.append({'ID': idnew, 'a_goals': ga_prior_a_f, 'a_mins': m_prior_a_f, 'b_goals': ga_prior_b_f,
                                                'b_mins': m_prior_b_f, 'a_games': p_prior_a_f, 'b_games': p_prior_b_f, 'c_goals': ga_prior_c_f, 'last_season': current_season,
                                                'player': namenew, 'position': positionnew, 'team': teamnew}, ignore_index=True)
-        
-            # update max ID count
-            current_ID_count += 1
     
         # update all_players params
         new_ind = np.where(all_players_parameters['player'] == data.loc[data.index[i], 'name'])[0][0]  # index now all_players_params is appended
-        goa = data.loc[data.index[i], 'goals_scored']
-        assi = data.loc[data.index[i], 'assists']
-        mns = data.loc[data.index[i], 'minutes']
-        tgoa = np.sum(data.loc[data.index[data['team'] == data.loc[data.index[i], 'team']], 'goals_scored']) * (data.loc[data.index[i], 'minutes'] > 0)
-        gms = data.loc[data.index[i], 'minutes'] > 0
+        goa = data.loc[data.index[i], 'gs']
+        assi = data.loc[data.index[i], 'a']
+        mns = data.loc[data.index[i], 'mp']
+        tgoa = data.loc[data.index[i], 'goals_for'] * (data.loc[data.index[i], 'mp'] / 90.)
+        gms = data.loc[data.index[i], 'mp'] > 0
     
         post_a_goals, post_b_goals, post_c_goals = update_goals_and_assists_simplex(all_players_parameters.loc[all_players_parameters.index[new_ind], 'a_goals'],
                                                                                     all_players_parameters.loc[all_players_parameters.index[new_ind], 'b_goals'],
@@ -168,11 +158,12 @@ def update_player_model(game_week_file, raw_player_data, ff):
 if __name__ == "__main__":
 
     results_file = sys.argv[1]
-    N = int(sys.argv[2])
-    save_to_csv = sys.argv[3]
-    game_week_file = sys.argv[4]
-    raw_player_data = sys.argv[5]
-    ff = float(sys.argv[6])
+    form_file = sys.argv[2]
+    N = int(sys.argv[3])
+    save_to_csv = sys.argv[4]
+    game_week_file = sys.argv[5]
+    raw_player_data = sys.argv[6]
+    ff = float(sys.argv[7])
     
-    update_team_model(results_file, N, save_to_csv)
+    update_team_model(results_file, form_file, N, save_to_csv)
     update_player_model(game_week_file, raw_player_data, ff)
