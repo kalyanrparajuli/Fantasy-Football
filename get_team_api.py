@@ -2,6 +2,7 @@ import requests
 import json
 import os
 import csv
+import sys
 import numpy as np
 
 # set up query
@@ -156,8 +157,20 @@ def getTeam(leagueId, gw, teamId=None):
 	
     if teamId != None:
         if teamId in all_team_ids:
+            if __name__ == "__main__":
+                print('Player Ids: ')
+                print(all_teams[int(ind)])
             return(all_users[int(ind)], all_team_ids[int(ind)], all_teams[int(ind)])
         else:
             print('teamId could not be found')
     else:
         return(all_users, all_team_ids, all_teams)
+
+' Run '
+if __name__ == "__main__":
+
+    leagueId = sys.argv[1]
+    gw = int(sys.argv[2])
+    teamId = sys.argv[3]
+    
+    getTeam(leagueId, gw, teamId)
