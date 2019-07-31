@@ -37,7 +37,7 @@ def produce_gw_data(gw):
     if not os.path.exists("data/draft_data/gws"):
         os.mkdir("data/draft_data/gws")
 	
-    with open('data/draft_data/gws/gw' + str(gw) + '.csv', mode='w', newline='') as csv_file:
+    with open('data/draft_data/gws/gw' + str(gw) + '.csv', mode='w', newline='', encoding='utf-8') as csv_file:
         csv_writer = csv.writer(csv_file, delimiter=',')
         for l in range(np.shape(gw_data)[0]):
             csv_writer.writerow(gw_data[l, :])
