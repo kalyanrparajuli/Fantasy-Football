@@ -473,3 +473,21 @@ def match_prob(exp_p1, sd_p1, exp_p2, sd_p2):
     exp_diff = exp_p1 - exp_p2
     sd_diff = np.sqrt((sd_p1 ** 2) + (sd_p2 ** 2))
     return(1 - norm.cdf(0, exp_diff, sd_diff))
+
+# finds all players in leagues teams and exclude them from overall players parameters
+def availablePlayers(leagueId, gw):
+    
+    users, team_ids, teams = getTeam(leagueId, gw)
+	
+    all_players_params = pd.read_csv("../parameters/all_players_params.csv")
+	
+    ids = all_players_params.index
+	
+    all_unavailableplayers = []
+    for i in range(len(teams)):
+        all_unavailableplayers.extend(teams[i])
+	
+    for i in range(len(all_unavailableplayers)):
+        ids = ids.drop(all_players_params.index[all_unavailableplayers[i] == all_players_params['ID']][0])
+	
+    return(ids)

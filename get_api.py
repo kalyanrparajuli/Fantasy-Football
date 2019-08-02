@@ -212,7 +212,7 @@ def getPlayerData(id):
     data = response.json()
     return(data)
 
-def getFixtures(gws, team_id_file="./data/team_id_20192020.csv"):
+def getFixtures(gws, team_id_file="./data/team_id_20192020.csv", filelead=""):
     
     response = requests.post("https://fantasy.premierleague.com/api/fixtures")
     data = response.json()
@@ -226,7 +226,7 @@ def getFixtures(gws, team_id_file="./data/team_id_20192020.csv"):
                     fixtures.append([list_team_codes['Team'][np.where(list_team_codes['id'] == data[i]['team_h'])[0][0]],
                                      list_team_codes['Team'][np.where(list_team_codes['id'] == data[i]['team_a'])[0][0]]])
         fixtures = np.array(fixtures)
-        with open('data/prem_results_20192020_gw' + str(gws[0]) + '-' + str(gws[-1]) + '.csv', mode='w', newline='', encoding='utf-8') as csv_file:
+        with open(filelead + 'data/prem_results_20192020_gw' + str(gws[0]) + '-' + str(gws[-1]) + '.csv', mode='w', newline='', encoding='utf-8') as csv_file:
             csv_writer = csv.writer(csv_file, delimiter=',')
             for l in range(np.shape(fixtures)[0]):
                 csv_writer.writerow(fixtures[l, :])
@@ -238,7 +238,7 @@ def getFixtures(gws, team_id_file="./data/team_id_20192020.csv"):
                 fixtures.append([list_team_codes['Team'][np.where(list_team_codes['id'] == data[i]['team_h'])[0][0]],
                                  list_team_codes['Team'][np.where(list_team_codes['id'] == data[i]['team_a'])[0][0]]])
         fixtures = np.array(fixtures)
-        with open('data/prem_results_20192020_gw' + str(gws) + '.csv', mode='w', newline='', encoding='utf-8') as csv_file:
+        with open(filelead + 'data/prem_results_20192020_gw' + str(gws) + '.csv', mode='w', newline='', encoding='utf-8') as csv_file:
             csv_writer = csv.writer(csv_file, delimiter=',')
             for l in range(np.shape(fixtures)[0]):
                 csv_writer.writerow(fixtures[l, :])
