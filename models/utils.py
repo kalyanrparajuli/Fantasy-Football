@@ -9,6 +9,9 @@ from scipy.stats import dirichlet
 import pandas as pd
 import itertools
 import matplotlib.pyplot as plot
+import sys
+sys.path.append('../')
+from get_team_api import *
 
 def EstimateParameters(fixture_list_1, fixture_list_2, fixture_list_3,
                        teams, beta, thetapriormeans, thetapriorsds,
@@ -344,7 +347,7 @@ def find_form(fixtures_list):
     
     teams_for_season = np.unique(teams_ht)
     
-    points = np.zeros((38, 20))
+    points = np.zeros((np.ceil(N / 10), 20))
     team_count = np.zeros(20)
     for i in range(N):
         points[team_count[np.where(teams_for_season == teams_ht[i])[0][0].astype(int)].astype(int), np.where(teams_for_season == teams_ht[i])[0][0].astype(int)] = (3 * (goals_ht[i] > goals_at[i])) + (goals_ht[i] == goals_at[i])
@@ -353,7 +356,8 @@ def find_form(fixtures_list):
         team_count[np.where(teams_for_season == teams_at[i])[0][0].astype(int)] += 1
     form = np.ones((38, 20)) * 7.5
     for j in range(20):
-        form[5:, j] = np.cumsum(points[:, j])[5:] - np.cumsum(points[:, j])[:(38 - 5)]
+        if np.shape(form)[0] >= 6:
+            form[5:, j] = np.cumsum(points[:, j])[5:] - np.cumsum(points[:, j])[:(38 - 5)]
     
     team_count = np.zeros(20)
     mat_form = np.zeros((N, 2))

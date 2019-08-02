@@ -3,6 +3,8 @@ import json
 import os
 import csv
 import numpy as np
+import sys
+import pandas as pd
 
 # set up query
 query_full = """query getPlayersFull($scoring: ScoringInput, $leagueId: String) {
@@ -209,6 +211,20 @@ def getPlayerData(id):
     response = requests.post("https://draftfantasyfootball.co.uk/graphql", json=request)
     data = response.json()
     return(data)
+
+def getFixtures(gw, team_id_file="./data/team_id_20192020.csv"):
+    
+    response = requests.post("https://fantasy.premierleague.com/api/fixtures", json=request)
+    data = response.json()
+	
+    fixtures = []
+    list_team_codes = pd.read_csv(team_id_file)
+    for i in range(len(data)):
+        if data[i]['event'] == gw:
+            fixtures.append([list_team_codes['Team'][np.where(list_team_codes['id'] == data[i]['team_h'])[0][0]],
+                             list_team_codes['Team'][np.where(list_team_codes['id'] == data[i]['team_a'])[0][0]]])
+	
+    return(np.array(fixtures))
 
 def get_api_data():
 
