@@ -214,7 +214,7 @@ def getPlayerData(id):
 
 def getFixtures(gw, team_id_file="./data/team_id_20192020.csv"):
     
-    response = requests.post("https://fantasy.premierleague.com/api/fixtures", json=request)
+    response = requests.post("https://fantasy.premierleague.com/api/fixtures")
     data = response.json()
 	
     fixtures = []

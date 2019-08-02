@@ -15,11 +15,10 @@ from priors import *
 
 ' Update team model '
 
-def update_team_model(prem_results, form_file, N, save_to_csv):
+def update_team_model(prem_results, N, save_to_csv):
 	
 	# read fixture list
     fixture_list_this_week = import_fixture_list(prem_results)
-    form = import_fixture_list(form_file)
 
     # read params and teams
     all_teams_params = pd.read_csv("../parameters/all_teams_params.csv", header=None)
@@ -41,7 +40,7 @@ def update_team_model(prem_results, form_file, N, save_to_csv):
             d_at = params[1 + len(teams) + np.where(teams == fixture_list_this_week.loc[fixture_list_this_week.index[j], 1])[0], i]
             xi[i] += np.log(likelihood_one_game(fixture_list_this_week.loc[fixture_list_this_week.index[j], 2],
                                                 fixture_list_this_week.loc[fixture_list_this_week.index[j], 3],
-                                                form.loc[form.index[j], 0], form.loc[form.index[j], 1], params[0, i], a_ht, d_ht, a_at, d_at, params[-1, i]))
+                                                params[0, i], a_ht, d_ht, a_at, d_at))
     
     resampled = np.random.choice(np.linspace(0, N - 1, N), N, p=np.exp(xi) / np.sum(np.exp(xi)))
     resampled_params = params[:, resampled.astype(int)]
@@ -158,12 +157,11 @@ def update_player_model(game_week_file, raw_player_data, ff):
 if __name__ == "__main__":
 
     results_file = sys.argv[1]
-    form_file = sys.argv[2]
-    N = int(sys.argv[3])
-    save_to_csv = sys.argv[4]
-    game_week_file = sys.argv[5]
-    raw_player_data = sys.argv[6]
-    ff = float(sys.argv[7])
+    N = int(sys.argv[2])
+    save_to_csv = sys.argv[3]
+    game_week_file = sys.argv[4]
+    raw_player_data = sys.argv[5]
+    ff = float(sys.argv[6])
     
-    update_team_model(results_file, form_file, N, save_to_csv)
+    update_team_model(results_file, N, save_to_csv)
     update_player_model(game_week_file, raw_player_data, ff)
