@@ -54,14 +54,14 @@ To obtain player id's for a given team, run the script:
 - `python get_team_api.py <league_id> <game_week> <team_id>`
 
 To simulate expected points for all teams in a given league, run the script:
-- `python get_team_performance.py <league_id> <game_week> <number_of_particles>
+- `python get_team_performance.py <league_id> <game_week> <number_of_particles>`
 
 ----------------------
 
 ## Fixtures and Results
 
 In order for model simulations to operate, first fixtures and results need to be updated. One can do this via running the script:
--`python get_fixtures_and_results <game_weeks_fixtures> <game_week_results>`
+-`python get_fixtures_and_results.py <game_weeks_fixtures> <game_week_results>`
 
 The argument `<game_weeks_fixtures>` can be given as a range, e.g. `1-3`. The argument `<game_week_results>` should only correspond to a gameweek that has been completed.
 
