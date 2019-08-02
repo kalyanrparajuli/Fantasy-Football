@@ -246,6 +246,28 @@ def getFixtures(gws, team_id_file="./data/team_id_20192020.csv", filelead=""):
 	
     return(fixtures)
 
+def getResults(gw, team_id_file="./data/team_id_20192020.csv", filelead=""):
+
+    response = requests.post("https://fantasy.premierleague.com/api/fixtures")
+    data = response.json()
+	
+    list_team_codes = pd.read_csv(team_id_file)
+    results = []
+    for i in range(len(data)):
+        if data[i]['event'] == gw:
+            #assert(data[i]['finished'])  # check to see if the games finished
+            results.append([list_team_codes['Team'][np.where(list_team_codes['id'] == data[i]['team_h'])[0][0]],
+                            list_team_codes['Team'][np.where(list_team_codes['id'] == data[i]['team_a'])[0][0]],
+							data[i]['team_h_score'], data[i]['team_a_score']])
+    results = np.array(results)
+    with open(filelead + 'data/prem_results_20192020_gw' + str(gw) + '.csv', mode='w', newline='', encoding='utf-8') as csv_file:
+        csv_writer = csv.writer(csv_file, delimiter=',')
+        for l in range(np.shape(results)[0]):
+            csv_writer.writerow(results[l, :])
+    csv_file.close()
+	
+    return(results)
+
 def get_api_data():
 
     # set up request for all players 
