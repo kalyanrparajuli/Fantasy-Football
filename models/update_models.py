@@ -12,14 +12,15 @@ from scipy.stats import dirichlet
 import itertools
 from utils import *
 from priors import *
+sys.path.append('../')
+from get_api import *
 
 ' Update team model '
 
-def update_team_model(prem_results, form_file, N, save_to_csv):
+def update_team_model(gw, N, save_to_csv):
 	
 	# read fixture list
-    fixture_list_this_week = import_fixture_list(prem_results)
-    form = import_fixture_list(form_file)
+    fixture_list_this_week = getResults(gw, team_id_file="../data/team_id_20192020.csv", filelead="../")
 
     # read params and teams
     all_teams_params = pd.read_csv("../parameters/all_teams_params.csv", header=None)
@@ -34,14 +35,14 @@ def update_team_model(prem_results, form_file, N, save_to_csv):
     # particle filter likelihood
     xi = np.zeros(N)
     for i in range(N):
-        for j in range(len(fixture_list_this_week.index)):
-            a_ht = params[1 + np.where(teams == fixture_list_this_week.loc[fixture_list_this_week.index[j], 0])[0], i]
-            a_at = params[1 + np.where(teams == fixture_list_this_week.loc[fixture_list_this_week.index[j], 1])[0], i]
-            d_ht = params[1 + len(teams) + np.where(teams == fixture_list_this_week.loc[fixture_list_this_week.index[j], 0])[0], i]
-            d_at = params[1 + len(teams) + np.where(teams == fixture_list_this_week.loc[fixture_list_this_week.index[j], 1])[0], i]
-            xi[i] += np.log(likelihood_one_game(fixture_list_this_week.loc[fixture_list_this_week.index[j], 2],
-                                                fixture_list_this_week.loc[fixture_list_this_week.index[j], 3],
-                                                form.loc[form.index[j], 0], form.loc[form.index[j], 1], params[0, i], a_ht, d_ht, a_at, d_at, params[-1, i]))
+        for j in range(np.shape(fixture_list_this_week)[0]):
+            a_ht = params[1 + np.where(teams == fixture_list_this_week[j, 0])[0], i]
+            a_at = params[1 + np.where(teams == fixture_list_this_week[j, 1])[0], i]
+            d_ht = params[1 + len(teams) + np.where(teams == fixture_list_this_week[j, 0])[0], i]
+            d_at = params[1 + len(teams) + np.where(teams == fixture_list_this_week[j, 1])[0], i]
+            xi[i] += np.log(likelihood_one_game(fixture_list_this_week[j, 2],
+                                                fixture_list_this_week[j, 3],
+                                                params[0, i], a_ht, d_ht, a_at, d_at))
     
     resampled = np.random.choice(np.linspace(0, N - 1, N), N, p=np.exp(xi) / np.sum(np.exp(xi)))
     resampled_params = params[:, resampled.astype(int)]
@@ -60,13 +61,15 @@ def update_team_model(prem_results, form_file, N, save_to_csv):
 
 ' Update player model'
 
-def update_player_model(game_week_file, raw_player_data, ff):
+def update_player_model(gw, ff, raw_player_data="../data/draft_data/draft_player_raw.csv"):
     
     current_season = 4
     all_players_parameters = pd.read_csv("../parameters/all_players_params.csv")
 	
+    filelead = "../data/draft_data/gws/gw"
+	
     # read raw gw data
-    dataraw = pd.read_csv(game_week_file)
+    dataraw = pd.read_csv(filelead + str(gw) + ".csv")
 
     # find id of players in gw data
     ids = dataraw['_id']
@@ -90,7 +93,7 @@ def update_player_model(game_week_file, raw_player_data, ff):
         corr_teams.append(name_data.loc[name_data.index[np.where(name_data.loc[:, '_id'] == ids[i])[0][0]], 'team_name'])
 
     # finally revise dataraw
-    data = pd.read_csv(game_week_file)
+    data = pd.read_csv(filelead + str(gw) + ".csv")
     data['name'] = corr_names
     data['position'] = corr_positions
     data['team'] = corr_teams
@@ -157,13 +160,10 @@ def update_player_model(game_week_file, raw_player_data, ff):
 ' Run '
 if __name__ == "__main__":
 
-    results_file = sys.argv[1]
-    form_file = sys.argv[2]
-    N = int(sys.argv[3])
-    save_to_csv = sys.argv[4]
-    game_week_file = sys.argv[5]
-    raw_player_data = sys.argv[6]
-    ff = float(sys.argv[7])
+    gw = int(sys.argv[1])
+    N = int(sys.argv[2])
+    save_to_csv = sys.argv[3]
+    ff = float(sys.argv[4])
     
-    update_team_model(results_file, form_file, N, save_to_csv)
-    update_player_model(game_week_file, raw_player_data, ff)
+    update_team_model(gw, N, save_to_csv)
+    update_player_model(gw, ff)

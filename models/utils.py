@@ -77,9 +77,8 @@ def EstimateParameters(fixture_list_1, fixture_list_2, fixture_list_3,
             d[zerooutinds] = 0
         a[0] = - np.sum(a[1:])  # normalize
         d[0] = - np.sum(d[1:])  # normalize
-        alpha = theta[((2 * len(teams)) + 1)]
         Htheta = likelihood_three_seasons(fixture_list_1, fixture_list_2, fixture_list_3,
-                                          teams, mu, a, d, alpha)
+                                          teams, mu, a, d)
         
         mu = thetastar[0]
         a = thetastar[1:(len(teams) + 1)]
@@ -89,9 +88,8 @@ def EstimateParameters(fixture_list_1, fixture_list_2, fixture_list_3,
             d[zerooutinds] = 0
         a[0] = - np.sum(a[1:])  # normalize
         d[0] = - np.sum(d[1:])  # normalize
-        alpha = thetastar[((2 * len(teams)) + 1)]
         Hthetastar = likelihood_three_seasons(fixture_list_1, fixture_list_2, fixture_list_3,
-                                              teams, mu, a, d, alpha)
+                                              teams, mu, a, d)
         
         alpha = np.min([0, (1 / T) * (Hthetastar - Htheta)])
         
@@ -127,15 +125,15 @@ def EstimateParameters(fixture_list_1, fixture_list_2, fixture_list_3,
     return thetaarray
 
 # create likelihood eval for one game
-def likelihood_one_game(goals_ht, goals_at, form_ht, form_at, mu, a_ht, d_ht, a_at, d_at, alpha):
-    lambda_ht = np.exp(mu + a_ht + d_at + (alpha * form_ht))
-    lambda_at = np.exp(a_at + d_ht + (alpha * form_at))
+def likelihood_one_game(goals_ht, goals_at, mu, a_ht, d_ht, a_at, d_at):
+    lambda_ht = np.exp(mu + a_ht + d_at)
+    lambda_at = np.exp(a_at + d_ht)
     p1 = poisson.pmf(goals_ht, lambda_ht)
     p2 = poisson.pmf(goals_at, lambda_at)
     return(p1 * p2)
 
 # create likelihood eval for single season
-def likelihood_season(fixtures_list, teams, mu, a, d, alpha):
+def likelihood_season(fixtures_list, teams, mu, a, d):
     N = np.shape(fixtures_list)[0]
     goals_ht = fixtures_list[:, 2]
     goals_at = fixtures_list[:, 3]
@@ -143,18 +141,6 @@ def likelihood_season(fixtures_list, teams, mu, a, d, alpha):
     teams_at = fixtures_list[:, 1]
     
     teams_for_season = np.unique(teams_ht)
-    
-    points = np.zeros((38, 20))
-    team_count = np.zeros(20)
-    for i in range(N):
-        points[team_count[np.where(teams_for_season == teams_ht[i])[0][0].astype(int)].astype(int), np.where(teams_for_season == teams_ht[i])[0][0].astype(int)] = (3 * (goals_ht[i] > goals_at[i])) + (goals_ht[i] == goals_at[i])
-        points[team_count[np.where(teams_for_season == teams_at[i])[0][0].astype(int)].astype(int), np.where(teams_for_season == teams_at[i])[0][0].astype(int)] = (3 * (goals_ht[i] < goals_at[i])) + (goals_ht[i] == goals_at[i])
-        team_count[np.where(teams_for_season == teams_ht[i])[0][0].astype(int)] += 1
-        team_count[np.where(teams_for_season == teams_at[i])[0][0].astype(int)] += 1
-    form = np.ones((38, 20)) * 7.5
-    for j in range(20):
-        form[5:, j] = np.cumsum(points[:, j])[5:] - np.cumsum(points[:, j])[:(38 - 5)]
-    
     team_count = np.zeros(20)
     likelihood = np.zeros(N)
     for i in range(N):
@@ -163,8 +149,7 @@ def likelihood_season(fixtures_list, teams, mu, a, d, alpha):
         ind_for_season_ht = np.where(teams_for_season == teams_ht[i])[0][0].astype(int)
         ind_for_season_at = np.where(teams_for_season == teams_at[i])[0][0].astype(int)
         l = likelihood_one_game(goals_ht[i], goals_at[i],
-                                form[team_count[ind_for_season_ht].astype(int), ind_for_season_ht].astype(int), form[team_count[ind_for_season_at].astype(int), ind_for_season_at],
-                                mu, a[ind_ht], d[ind_ht], a[ind_at], d[ind_at], alpha)
+                                mu, a[ind_ht], d[ind_ht], a[ind_at], d[ind_at])
         team_count[np.where(teams_for_season == teams_ht[i])[0][0].astype(int)] += 1
         team_count[np.where(teams_for_season == teams_at[i])[0][0].astype(int)] += 1
         likelihood[i] = l
@@ -172,14 +157,13 @@ def likelihood_season(fixtures_list, teams, mu, a, d, alpha):
     return(np.sum(np.log(likelihood)))
 
 # likelihood over three seasons - weighted
-def likelihood_three_seasons(fixture_list_1, fixture_list_2, fixture_list_3, teams, mu, a, d, alpha):
-    likelihood = (0.2 * likelihood_season(fixture_list_1, teams, mu, a, d, alpha)) + (0.3 * likelihood_season(fixture_list_2, teams, mu, a, d, alpha)) + (0.5 * likelihood_season(fixture_list_3, teams, mu, a, d, alpha))
+def likelihood_three_seasons(fixture_list_1, fixture_list_2, fixture_list_3, teams, mu, a, d):
+    likelihood = (0.2 * likelihood_season(fixture_list_1, teams, mu, a, d)) + (0.3 * likelihood_season(fixture_list_2, teams, mu, a, d)) + (0.5 * likelihood_season(fixture_list_3, teams, mu, a, d))
     return(likelihood)
 
 # function to predict probabilities of fixtures
-def predict_fixtures(new_fixtures, form, teams, mu, a, d, alpha, uncertainty=False):
+def predict_fixtures(new_fixtures, teams, mu, a, d, uncertainty=False):
     if uncertainty:
-        # form is N x 2
         N = np.shape(new_fixtures)[0]
         teams_ht = new_fixtures[:, 0]
         teams_at = new_fixtures[:, 1]
@@ -192,13 +176,11 @@ def predict_fixtures(new_fixtures, form, teams, mu, a, d, alpha, uncertainty=Fal
             for u in range(len(teams)):
                 aest[u] = np.random.normal(a[u, 0], a[u, 1])
                 dest[u] = np.random.normal(d[u, 0], d[u, 1])
-            alphaest = np.random.normal(alpha[0], alpha[1])
             ind_ht = np.where(teams == teams_ht[i])[0][0].astype(int)
             ind_at = np.where(teams == teams_at[i])[0][0].astype(int)
-            lambda_1[i] = np.exp(muest + aest[ind_ht] + dest[ind_at] + (alphaest * form[i, 0]))
-            lambda_2[i] = np.exp(aest[ind_at] + dest[ind_ht] + (alphaest * form[i, 1]))
+            lambda_1[i] = np.exp(muest + aest[ind_ht] + dest[ind_at])
+            lambda_2[i] = np.exp(aest[ind_at] + dest[ind_ht])
     else:
-        # form is N x 2
         N = np.shape(new_fixtures)[0]
         teams_ht = new_fixtures[:, 0]
         teams_at = new_fixtures[:, 1]
@@ -207,8 +189,8 @@ def predict_fixtures(new_fixtures, form, teams, mu, a, d, alpha, uncertainty=Fal
         for i in range(N):
             ind_ht = np.where(teams == teams_ht[i])[0][0].astype(int)
             ind_at = np.where(teams == teams_at[i])[0][0].astype(int)
-            lambda_1[i] = np.exp(mu + a[ind_ht] + d[ind_at] + (alpha * form[i, 0]))
-            lambda_2[i] = np.exp(a[ind_at] + d[ind_ht] + (alpha * form[i, 1]))
+            lambda_1[i] = np.exp(mu + a[ind_ht] + d[ind_at])
+            lambda_2[i] = np.exp(a[ind_at] + d[ind_ht])
     return(lambda_1, lambda_2)
 
 def import_fixture_lists(filename_1, filename_2, filename_3):
@@ -336,43 +318,6 @@ def name_replace(names):
         replacements.append(names[i])
     return(np.array(replacements))
 
-# create form matrix
-def find_form(fixtures_list):
-    
-    N = np.shape(fixtures_list)[0]
-    goals_ht = fixtures_list[:, 2]
-    goals_at = fixtures_list[:, 3]
-    teams_ht = fixtures_list[:, 0]
-    teams_at = fixtures_list[:, 1]
-    
-    teams_for_season = np.unique(teams_ht)
-    
-    points = np.zeros((np.ceil(N / 10), 20))
-    team_count = np.zeros(20)
-    for i in range(N):
-        points[team_count[np.where(teams_for_season == teams_ht[i])[0][0].astype(int)].astype(int), np.where(teams_for_season == teams_ht[i])[0][0].astype(int)] = (3 * (goals_ht[i] > goals_at[i])) + (goals_ht[i] == goals_at[i])
-        points[team_count[np.where(teams_for_season == teams_at[i])[0][0].astype(int)].astype(int), np.where(teams_for_season == teams_at[i])[0][0].astype(int)] = (3 * (goals_ht[i] < goals_at[i])) + (goals_ht[i] == goals_at[i])
-        team_count[np.where(teams_for_season == teams_ht[i])[0][0].astype(int)] += 1
-        team_count[np.where(teams_for_season == teams_at[i])[0][0].astype(int)] += 1
-    form = np.ones((38, 20)) * 7.5
-    for j in range(20):
-        if np.shape(form)[0] >= 6:
-            form[5:, j] = np.cumsum(points[:, j])[5:] - np.cumsum(points[:, j])[:(38 - 5)]
-    
-    team_count = np.zeros(20)
-    mat_form = np.zeros((N, 2))
-    for i in range(N):
-        ind_ht = np.where(teams == teams_ht[i])[0][0].astype(int)
-        ind_at = np.where(teams == teams_at[i])[0][0].astype(int)
-        ind_for_season_ht = np.where(teams_for_season == teams_ht[i])[0][0].astype(int)
-        ind_for_season_at = np.where(teams_for_season == teams_at[i])[0][0].astype(int)
-        mat_form[i, 0] = form[team_count[ind_for_season_ht].astype(int), ind_for_season_ht]
-        mat_form[i, 1] = form[team_count[ind_for_season_at].astype(int), ind_for_season_at]
-        team_count[np.where(teams_for_season == teams_ht[i])[0][0].astype(int)] += 1
-        team_count[np.where(teams_for_season == teams_at[i])[0][0].astype(int)] += 1
-    
-    return(teams_for_season, mat_form)
-
 def sample_clean_sheet_for_team(lambda_2):
     return(np.random.poisson(lambda_2) == 0)
 
@@ -405,7 +350,7 @@ def get_players(all_players_params, team_sel):
     return(ind)
 
 def ComputeExpectedPoints(fixtures_list, teams, all_players_params, all_teams_params,
-                          zerooutbottom=0, Niter=250, additionalstats=False, form=None):
+                          zerooutbottom=0, Niter=250, additionalstats=False):
     
     # param data sets are pd Data Frames
     
@@ -421,13 +366,8 @@ def ComputeExpectedPoints(fixtures_list, teams, all_players_params, all_teams_pa
     mu = (all_teams_params.as_matrix())[0, :]
     a = (all_teams_params.as_matrix())[1:(len(teams) + 1), :]
     d = (all_teams_params.as_matrix())[(len(teams) + 1):((2 * len(teams)) + 1), :]
-    alpha = (all_teams_params.as_matrix())[((2 * len(teams)) + 1), :]
 
     for l in range(Niter):
-        
-        # preallocate form array
-        team_points = np.zeros((38, len(teams)))
-        team_counter = np.zeros(len(teams))
         
         for i in range(np.shape(fixtures_list)[0]):
             
@@ -435,37 +375,13 @@ def ComputeExpectedPoints(fixtures_list, teams, all_players_params, all_teams_pa
             h_team = fixtures_list[i, 0]
             a_team = fixtures_list[i, 1]
             
-            # compute form
-            if hasattr(form, '__len__'):
-                form_h = form[i, 0]
-                form_a = form[i, 1]
-            else:
-                if team_counter[np.where(h_team == teams)[0][0]] > 5:
-                    form_h = (np.cumsum(team_points[:, int(np.where(h_team == teams)[0][0])])[5:] - np.cumsum(team_points[:, int(np.where(h_team == teams)[0][0])])[:(38 - 5)])[int(team_counter[np.where(h_team == teams)[0][0]] - 1 - 5)]
-                else:
-                    form_h = 7.5
-                if team_counter[np.where(a_team == teams)[0][0]] > 5:
-                    form_a = (np.cumsum(team_points[:, int(np.where(a_team == teams)[0][0])])[5:] - np.cumsum(team_points[:, int(np.where(a_team == teams)[0][0])])[:(38 - 5)])[int(team_counter[np.where(a_team == teams)[0][0]] - 1 - 5)]
-                else:
-                    form_a = 7.5
-            
             # sample lambdas for team performance - sample from team hyperparameters
             lambdas = predict_fixtures(np.reshape(fixtures_list[i, :2], ((1, 2))),
-                                       np.reshape(np.array([form_h, form_a]), ((1, 2))),
-                                       teams, mu, a, d, alpha, uncertainty=True)
+                                       teams, mu, a, d, uncertainty=True)
             
             # sample score
             h_n = np.random.poisson(lambdas[0][0])
             a_n = np.random.poisson(lambdas[1][0])
-            
-            # compute incremental team points
-            team_points[int(team_counter[np.where(h_team == teams)[0][0]]),
-                        int(np.where(h_team == teams)[0][0])] += (3 * (h_n > a_n)) + (h_n == a_n)
-            team_points[int(team_counter[np.where(a_team == teams)[0][0]]),
-                        int(np.where(a_team == teams)[0][0])] += (3 * (h_n < a_n)) + (h_n == a_n)
-            
-            team_counter[np.where(h_team == teams)[0][0]] += 1
-            team_counter[np.where(a_team == teams)[0][0]] += 1
             
             # find all players in these teams
             h_players = get_players(all_players_params, h_team)
@@ -557,3 +473,21 @@ def match_prob(exp_p1, sd_p1, exp_p2, sd_p2):
     exp_diff = exp_p1 - exp_p2
     sd_diff = np.sqrt((sd_p1 ** 2) + (sd_p2 ** 2))
     return(1 - norm.cdf(0, exp_diff, sd_diff))
+
+# finds all players in leagues teams and exclude them from overall players parameters
+def availablePlayers(leagueId, gw):
+    
+    users, team_ids, teams = getTeam(leagueId, gw)
+	
+    all_players_params = pd.read_csv("../parameters/all_players_params.csv")
+	
+    ids = all_players_params.index
+	
+    all_unavailableplayers = []
+    for i in range(len(teams)):
+        all_unavailableplayers.extend(teams[i])
+	
+    for i in range(len(all_unavailableplayers)):
+        ids = ids.drop(all_players_params.index[all_unavailableplayers[i] == all_players_params['ID']][0])
+	
+    return(ids)
