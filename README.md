@@ -43,7 +43,7 @@ To update the models at gameweek `gw`, follow the steps below:
 
 - `python get_fixtures_and_results.py gw (gw-1)`. The first argument here can be a range of the following gameweeks.
 
-- `models>> python update_models.py gw <number_of_particles> <save_to_csv?> <forgetting_factor>`
+- `models>> python update_models.py gw <number_of_particles> <save_to_csv?> <forgetting_factor_goals> <forgetting_factor_minutes> <forgetting_factor_games>`
 
 --------------------
 

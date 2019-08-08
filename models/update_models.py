@@ -36,13 +36,13 @@ def update_team_model(gw, N, save_to_csv):
     xi = np.zeros(N)
     for i in range(N):
         for j in range(np.shape(fixture_list_this_week)[0]):
-            a_ht = params[1 + np.where(teams == fixture_list_this_week[j, 0])[0], i]
-            a_at = params[1 + np.where(teams == fixture_list_this_week[j, 1])[0], i]
-            d_ht = params[1 + len(teams) + np.where(teams == fixture_list_this_week[j, 0])[0], i]
-            d_at = params[1 + len(teams) + np.where(teams == fixture_list_this_week[j, 1])[0], i]
+            a_ht = params[2 + np.where(teams == fixture_list_this_week[j, 0])[0], i]
+            a_at = params[2 + np.where(teams == fixture_list_this_week[j, 1])[0], i]
+            d_ht = params[2 + len(teams) + np.where(teams == fixture_list_this_week[j, 0])[0], i]
+            d_at = params[2 + len(teams) + np.where(teams == fixture_list_this_week[j, 1])[0], i]
             xi[i] += np.log(likelihood_one_game(fixture_list_this_week[j, 2],
                                                 fixture_list_this_week[j, 3],
-                                                params[0, i], a_ht, d_ht, a_at, d_at))
+                                                params[0, i], params[1, i], a_ht, d_ht, a_at, d_at))
     
     resampled = np.random.choice(np.linspace(0, N - 1, N), N, p=np.exp(xi) / np.sum(np.exp(xi)))
     resampled_params = params[:, resampled.astype(int)]
@@ -61,7 +61,7 @@ def update_team_model(gw, N, save_to_csv):
 
 ' Update player model'
 
-def update_player_model(gw, ff, raw_player_data="../data/draft_data/draft_player_raw.csv"):
+def update_player_model(gw, ffgoals, ffmins, ffgames, raw_player_data="../data/draft_data/draft_player_raw.csv"):
     
     current_season = 4
     all_players_parameters = pd.read_csv("../parameters/all_players_params.csv")
@@ -139,11 +139,11 @@ def update_player_model(gw, ff, raw_player_data="../data/draft_data/draft_player
     
         post_a_goals, post_b_goals, post_c_goals = update_goals_and_assists_simplex(all_players_parameters.loc[all_players_parameters.index[new_ind], 'a_goals'],
                                                                                     all_players_parameters.loc[all_players_parameters.index[new_ind], 'b_goals'],
-                                                                                    all_players_parameters.loc[all_players_parameters.index[new_ind], 'c_goals'], goa, assi, tgoa, ff)
+                                                                                    all_players_parameters.loc[all_players_parameters.index[new_ind], 'c_goals'], goa, assi, tgoa, ffgoals)
         post_a_mins, post_b_mins = update_mins_simplex(all_players_parameters.loc[all_players_parameters.index[new_ind], 'a_mins'],
-                                                       all_players_parameters.loc[all_players_parameters.index[new_ind], 'b_mins'], mns, gms, ff)
+                                                       all_players_parameters.loc[all_players_parameters.index[new_ind], 'b_mins'], mns, gms, ffmins)
         post_a_played, post_b_played = update_games_played_simplex(all_players_parameters.loc[all_players_parameters.index[new_ind], 'a_games'],
-                                                       all_players_parameters.loc[all_players_parameters.index[new_ind], 'b_games'], gms, 1 - gms, ff)
+                                                       all_players_parameters.loc[all_players_parameters.index[new_ind], 'b_games'], gms, 1 - gms, ffgames)
 
         all_players_parameters.loc[all_players_parameters.index[new_ind], 'a_goals'] = post_a_goals
         all_players_parameters.loc[all_players_parameters.index[new_ind], 'b_goals'] = post_b_goals
@@ -163,7 +163,9 @@ if __name__ == "__main__":
     gw = int(sys.argv[1])
     N = int(sys.argv[2])
     save_to_csv = sys.argv[3]
-    ff = float(sys.argv[4])
+    ffgoals = float(sys.argv[4])
+    ffmins = float(sys.argv[5])
+    ffgames = float(sys.argv[6])
     
     update_team_model(gw, N, save_to_csv)
-    update_player_model(gw, ff)
+    update_player_model(gw, ffgoals, ffmins, ffgames)
