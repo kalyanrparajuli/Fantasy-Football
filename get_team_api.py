@@ -171,6 +171,10 @@ if __name__ == "__main__":
 
     leagueId = sys.argv[1]
     gw = int(sys.argv[2])
-    teamId = sys.argv[3]
-    
-    getTeam(leagueId, gw, teamId)
+    try:
+        teamId = sys.argv[3]
+    except IndexError:
+        getTeam(leagueId, gw)
+    else:
+        teamId = sys.argv[3]
+        getTeam(leagueId, gw, teamId)
