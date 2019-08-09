@@ -314,41 +314,45 @@ def get_api_data():
         os.mkdir("data/draft_data/players")
 
     for i in range(len(player_ids)):
-    
-        player_data = getPlayerData(player_ids[i])['data']['player']['fixtures_data']
-    
-        data_raw = []
-        data_raw.append(keys_fix)
-        for j in range(len(player_data)):
-            data_raw_i = []
-            for k in range(len(keys_fix)):
-                data_raw_i.append(player_data[j][keys_fix[k]])
-            data_raw.append(data_raw_i)
-        data_raw = np.array(data_raw)
-		
-        # edit result key
-        home_or_away = ['home_or_away']
-        for_goals = ['goals_for']
-        against_goals = ['goals_against']
-        for j in range(1, (len(player_data) + 1)):
-            home_or_away.append(data_raw[j, int(np.where(np.array(keys_fix) == 'vs')[0])][-6])
-            if home_or_away[-1] == 'H':
-                for_goals.append(data_raw[j, int(np.where(np.array(keys_fix) == 'vs')[0])][-3:][0])
-                against_goals.append(data_raw[j, int(np.where(np.array(keys_fix) == 'vs')[0])][-3:][2])
-            if home_or_away[-1] == 'A':
-                for_goals.append(data_raw[j, int(np.where(np.array(keys_fix) == 'vs')[0])][-3:][2])
-                against_goals.append(data_raw[j, int(np.where(np.array(keys_fix) == 'vs')[0])][-3:][0])
-		
-        # add additional data points
-        data_raw = np.hstack((data_raw, np.reshape(np.array(home_or_away), ((len(player_data) + 1, 1)))))
-        data_raw = np.hstack((data_raw, np.reshape(np.array(for_goals), ((len(player_data) + 1, 1)))))
-        data_raw = np.hstack((data_raw, np.reshape(np.array(against_goals), ((len(player_data) + 1, 1)))))
 
-        with open('data/draft_data/players/' + player_ids[i] + '.csv', mode='w', newline='', encoding='utf-8') as csv_file:
-            csv_writer = csv.writer(csv_file, delimiter=',')
-            for l in range(np.shape(data_raw)[0]):
-                csv_writer.writerow(data_raw[l, :])
-        csv_file.close()
+        try:
+            player_data = getPlayerData(player_ids[i])['data']['player']['fixtures_data']
+        except KeyError:
+            print('')
+        else:
+            player_data = getPlayerData(player_ids[i])['data']['player']['fixtures_data']
+            data_raw = []
+            data_raw.append(keys_fix)
+            for j in range(len(player_data)):
+                data_raw_i = []
+                for k in range(len(keys_fix)):
+                    data_raw_i.append(player_data[j][keys_fix[k]])
+                data_raw.append(data_raw_i)
+            data_raw = np.array(data_raw)
+		
+            # edit result key
+            home_or_away = ['home_or_away']
+            for_goals = ['goals_for']
+            against_goals = ['goals_against']
+            for j in range(1, (len(player_data) + 1)):
+                home_or_away.append(data_raw[j, int(np.where(np.array(keys_fix) == 'vs')[0])][-6])
+                if home_or_away[-1] == 'H':
+                    for_goals.append(data_raw[j, int(np.where(np.array(keys_fix) == 'vs')[0])][-3:][0])
+                    against_goals.append(data_raw[j, int(np.where(np.array(keys_fix) == 'vs')[0])][-3:][2])
+                if home_or_away[-1] == 'A':
+                    for_goals.append(data_raw[j, int(np.where(np.array(keys_fix) == 'vs')[0])][-3:][2])
+                    against_goals.append(data_raw[j, int(np.where(np.array(keys_fix) == 'vs')[0])][-3:][0])
+		
+            # add additional data points
+            data_raw = np.hstack((data_raw, np.reshape(np.array(home_or_away), ((len(player_data) + 1, 1)))))
+            data_raw = np.hstack((data_raw, np.reshape(np.array(for_goals), ((len(player_data) + 1, 1)))))
+            data_raw = np.hstack((data_raw, np.reshape(np.array(against_goals), ((len(player_data) + 1, 1)))))
+
+            with open('data/draft_data/players/' + player_ids[i] + '.csv', mode='w', newline='', encoding='utf-8') as csv_file:
+                csv_writer = csv.writer(csv_file, delimiter=',')
+                for l in range(np.shape(data_raw)[0]):
+                    csv_writer.writerow(data_raw[l, :])
+            csv_file.close()
 	
 	# save data for season totals
     keys_seasons = []
@@ -360,22 +364,26 @@ def get_api_data():
 
     for i in range(len(player_ids)):
     
-        player_data = getPlayerData(player_ids[i])['data']['player']['seasonHistories']
+        try:
+            player_data = getPlayerData(player_ids[i])['data']['player']['seasonHistories']
+        except KeyError:
+            print('')
+        else:
     
-        data_raw = []
-        data_raw.append(keys_seasons)
-        for j in range(len(player_data)):
-            data_raw_i = []
-            for k in range(len(keys_seasons)):
-                data_raw_i.append(player_data[j][keys_seasons[k]])
-            data_raw.append(data_raw_i)
-        data_raw = np.array(data_raw)
+            data_raw = []
+            data_raw.append(keys_seasons)
+            for j in range(len(player_data)):
+                data_raw_i = []
+                for k in range(len(keys_seasons)):
+                    data_raw_i.append(player_data[j][keys_seasons[k]])
+                data_raw.append(data_raw_i)
+            data_raw = np.array(data_raw)
 		
-        with open('data/draft_data/seasons/seasonHistories_' + player_ids[i] + '.csv', mode='w', newline='', encoding='utf-8') as csv_file:
-            csv_writer = csv.writer(csv_file, delimiter=',')
-            for l in range(np.shape(data_raw)[0]):
-                csv_writer.writerow(data_raw[l, :])
-        csv_file.close()
+            with open('data/draft_data/seasons/seasonHistories_' + player_ids[i] + '.csv', mode='w', newline='', encoding='utf-8') as csv_file:
+                csv_writer = csv.writer(csv_file, delimiter=',')
+                for l in range(np.shape(data_raw)[0]):
+                    csv_writer.writerow(data_raw[l, :])
+            csv_file.close()
 
 
 

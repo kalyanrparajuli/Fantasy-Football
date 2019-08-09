@@ -460,8 +460,8 @@ def ComputeExpectedPoints(fixtures_list, teams, all_players_params, all_teams_pa
 
         print('---')
         print('Realisation ', l)
-        print('Top Points Scorers: ', all_players_params.loc[all_players_params.index[np.argsort(points[l, :])[-5:].astype(int)], 'player'],
-              ' with ', np.sort(points[l, :])[-5:], ' points')
+        #print('Top Points Scorers: ', all_players_params.loc[all_players_params.index[np.argsort(points[l, :])[-5:].astype(int)], 'player'],
+        #      ' with ', np.sort(points[l, :])[-5:], ' points')
 
     if zerooutbottom > 0:
         for l in range(Niter):

@@ -31,6 +31,10 @@ def update_team_model(gw, N, save_to_csv):
     params = np.zeros((np.shape(tp)[0], N))
     for j in range(np.shape(tp)[0]):
         params[j, :] = np.random.normal(tp[j, 0], tp[j, 1], N)
+    
+    # adjust for zero constraint
+    params[2:(len(teams) + 2), :] = params[2:(len(teams) + 2), :] - np.sum(params[2:(len(teams) + 2), :], axis=0)
+    params[(len(teams) + 2):(2 + (2 * len(teams))), :] = params[(len(teams) + 2):(2 + (2 * len(teams))), :] - np.sum(params[(len(teams) + 2):(2 + (2 * len(teams))), :], axis=0)
 	
     # particle filter likelihood
     xi = np.zeros(N)
@@ -52,11 +56,11 @@ def update_team_model(gw, N, save_to_csv):
 	
     if save_to_csv:
         print('saving new team parameters to csv...')
-		#with open('../parameters/all_teams_params.csv', mode='w', newline='') as csv_file:
+        #with open('../parameters/all_teams_params.csv', mode='w', newline='') as csv_file:
         #    csv_writer = csv.writer(csv_file, delimiter=',')
         #    for i in range(((2 * len(teams)) + 2)):
         #        csv_writer.writerow([new_means[i], new_sds[i]])
-        #csv_file.close())
+        #csv_file.close()
 
 
 ' Update player model'
