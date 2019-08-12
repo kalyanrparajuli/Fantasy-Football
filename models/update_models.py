@@ -33,8 +33,8 @@ def update_team_model(gw, N, save_to_csv):
         params[j, :] = np.random.normal(tp[j, 0], tp[j, 1], N)
     
     # adjust for zero constraint
-    params[2:(len(teams) + 2), :] = params[2:(len(teams) + 2), :] - np.sum(params[2:(len(teams) + 2), :], axis=0)
-    params[(len(teams) + 2):(2 + (2 * len(teams))), :] = params[(len(teams) + 2):(2 + (2 * len(teams))), :] - np.sum(params[(len(teams) + 2):(2 + (2 * len(teams))), :], axis=0)
+    params[2:(len(teams) + 2), :] = params[2:(len(teams) + 2), :] - np.mean(params[2:(len(teams) + 2), :], axis=0)
+    params[(len(teams) + 2):(2 + (2 * len(teams))), :] = params[(len(teams) + 2):(2 + (2 * len(teams))), :] - np.mean(params[(len(teams) + 2):(2 + (2 * len(teams))), :], axis=0)
 	
     # particle filter likelihood
     xi = np.zeros(N)
@@ -44,8 +44,8 @@ def update_team_model(gw, N, save_to_csv):
             a_at = params[2 + np.where(teams == fixture_list_this_week[j, 1])[0], i]
             d_ht = params[2 + len(teams) + np.where(teams == fixture_list_this_week[j, 0])[0], i]
             d_at = params[2 + len(teams) + np.where(teams == fixture_list_this_week[j, 1])[0], i]
-            xi[i] += np.log(likelihood_one_game(fixture_list_this_week[j, 2],
-                                                fixture_list_this_week[j, 3],
+            xi[i] += np.log(likelihood_one_game(int(fixture_list_this_week[j, 2]),
+                                                int(fixture_list_this_week[j, 3]),
                                                 params[0, i], params[1, i], a_ht, d_ht, a_at, d_at))
     
     resampled = np.random.choice(np.linspace(0, N - 1, N), N, p=np.exp(xi) / np.sum(np.exp(xi)))
@@ -56,16 +56,16 @@ def update_team_model(gw, N, save_to_csv):
 	
     if save_to_csv:
         print('saving new team parameters to csv...')
-        #with open('../parameters/all_teams_params.csv', mode='w', newline='') as csv_file:
-        #    csv_writer = csv.writer(csv_file, delimiter=',')
-        #    for i in range(((2 * len(teams)) + 2)):
-        #        csv_writer.writerow([new_means[i], new_sds[i]])
-        #csv_file.close()
+        with open('../parameters/all_teams_params.csv', mode='w', newline='') as csv_file:
+            csv_writer = csv.writer(csv_file, delimiter=',')
+            for i in range(((2 * len(teams)) + 2)):
+                csv_writer.writerow([new_means[i], new_sds[i]])
+        csv_file.close()
 
 
 ' Update player model'
 
-def update_player_model(gw, ffgoals, ffmins, ffgames, raw_player_data="../data/draft_data/draft_player_raw.csv"):
+def update_player_model(gw, ffgoals, ffmins, ffgames, save_to_csv=True, raw_player_data="../data/draft_data/draft_player_raw.csv"):
     
     current_season = 4
     all_players_parameters = pd.read_csv("../parameters/all_players_params.csv")
@@ -138,7 +138,7 @@ def update_player_model(gw, ffgoals, ffmins, ffgames, raw_player_data="../data/d
         goa = data.loc[data.index[i], 'gs']
         assi = data.loc[data.index[i], 'a']
         mns = data.loc[data.index[i], 'mp']
-        tgoa = data.loc[data.index[i], 'goals_for'] * (data.loc[data.index[i], 'mp'] / 90.)
+        tgoa = np.ceil(data.loc[data.index[i], 'goals_for'] * (data.loc[data.index[i], 'mp'] / 90.))
         gms = data.loc[data.index[i], 'mp'] > 0
     
         post_a_goals, post_b_goals, post_c_goals = update_goals_and_assists_simplex(all_players_parameters.loc[all_players_parameters.index[new_ind], 'a_goals'],
@@ -159,7 +159,7 @@ def update_player_model(gw, ffgoals, ffmins, ffgames, raw_player_data="../data/d
 	
     if save_to_csv:
         print('saving new player parameters to csv....')
-        #all_players_parameters.to_csv("../parameters/all_players_params.csv", index=False)
+        all_players_parameters.to_csv("../parameters/all_players_params.csv", index=False)
 
 ' Run '
 if __name__ == "__main__":

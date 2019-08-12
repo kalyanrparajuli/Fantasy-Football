@@ -487,7 +487,7 @@ def match_prob(exp_p1, sd_p1, exp_p2, sd_p2):
 # finds all players in leagues teams and exclude them from overall players parameters
 def availablePlayers(leagueId, gw):
     
-    users, team_ids, teams = getTeam(leagueId, gw)
+    users, team_ids, teams, matches = getTeam(leagueId, gw)
 	
     all_players_params = pd.read_csv("../parameters/all_players_params.csv")
 	
