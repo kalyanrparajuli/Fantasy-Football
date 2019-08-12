@@ -128,6 +128,7 @@ def getTeam(leagueId, gw, teamId=None):
     all_team_ids = []
     all_teams = []
     all_users = []
+    all_matches = []
 	
     for i in range(len(matchIds)):
 	    
@@ -138,20 +139,50 @@ def getTeam(leagueId, gw, teamId=None):
         data = response.json()
 		
         # team1
-        all_team_ids.append(data['data']['match']['team1']['_id'])
-        all_users.append(data['data']['match']['team1']['user']['name'])
-        team = []
-        for j in range(len(data['data']['match']['team1']['gameweekPlayers'])):
-            team.append(data['data']['match']['team1']['gameweekPlayers'][j]['_id'])
-        all_teams.append(team)
+        matchup = []
+        try:
+            data['data']['match']['team1']['_id']
+        except TypeError:
+            print(' ')
+        else:
+            all_team_ids.append(data['data']['match']['team1']['_id'])
+            all_users.append(data['data']['match']['team1']['user']['name'])
+            team = []
+            for j in range(len(data['data']['match']['team1']['gameweekPlayers'])):
+                if hasattr(data['data']['match']['team1']['gameweekPlayers'][j]['rotowireInjuryUpdate'], '__len__'):
+                    if (data['data']['match']['team1']['gameweekPlayers'][j]['rotowireInjuryUpdate']['status'] == 'OUT') or (data['data']['match']['team1']['gameweekPlayers'][j]['rotowireInjuryUpdate']['status'] == 'SUS'):
+                        # skip player as injured or out
+                        print('player out: ', data['data']['match']['team1']['gameweekPlayers'][j]['_id'])
+                    else:
+                        team.append(data['data']['match']['team1']['gameweekPlayers'][j]['_id'])
+                else:
+                    team.append(data['data']['match']['team1']['gameweekPlayers'][j]['_id'])
+            all_teams.append(team)
+            matchup.append(data['data']['match']['team1']['_id'])
 		
         # team2
-        all_team_ids.append(data['data']['match']['team2']['_id'])
-        all_users.append(data['data']['match']['team2']['user']['name'])
-        team = []
-        for j in range(len(data['data']['match']['team2']['gameweekPlayers'])):
-            team.append(data['data']['match']['team2']['gameweekPlayers'][j]['_id'])
-        all_teams.append(team)
+        try:
+            data['data']['match']['team2']['_id']
+        except TypeError:
+            print(' ')
+        else:
+            all_team_ids.append(data['data']['match']['team2']['_id'])
+            all_users.append(data['data']['match']['team2']['user']['name'])
+            team = []
+            plo = []
+            for j in range(len(data['data']['match']['team2']['gameweekPlayers'])):
+                if hasattr(data['data']['match']['team2']['gameweekPlayers'][j]['rotowireInjuryUpdate'], '__len__'):
+                    if (data['data']['match']['team2']['gameweekPlayers'][j]['rotowireInjuryUpdate']['status'] == 'OUT') or (data['data']['match']['team2']['gameweekPlayers'][j]['rotowireInjuryUpdate']['status'] == 'SUS'):
+                        # skip player as injured or out
+                        print('player out: ', data['data']['match']['team2']['gameweekPlayers'][j]['_id'])
+                    else:
+                        team.append(data['data']['match']['team2']['gameweekPlayers'][j]['_id'])
+                else:
+                    team.append(data['data']['match']['team2']['gameweekPlayers'][j]['_id'])
+            all_teams.append(team)
+            matchup.append(data['data']['match']['team2']['_id'])
+    
+        all_matches.append(matchup)
 	
     ind = np.where(teamId == np.array(all_team_ids))[0]
 	
@@ -159,18 +190,22 @@ def getTeam(leagueId, gw, teamId=None):
         if teamId in all_team_ids:
             if __name__ == "__main__":
                 print('Player Ids: ')
-                print(all_teams[int(ind)])
-            return(all_users[int(ind)], all_team_ids[int(ind)], all_teams[int(ind)])
+                print(all_teams[int(ind[0])])
+            return(all_users[int(ind[0])], all_team_ids[int(ind[0])], all_teams[int(ind[0])])
         else:
             print('teamId could not be found')
     else:
-        return(all_users, all_team_ids, all_teams)
+        return(all_users, all_team_ids, all_teams, all_matches)
 
 ' Run '
 if __name__ == "__main__":
 
     leagueId = sys.argv[1]
     gw = int(sys.argv[2])
-    teamId = sys.argv[3]
-    
-    getTeam(leagueId, gw, teamId)
+    try:
+        teamId = sys.argv[3]
+    except IndexError:
+        getTeam(leagueId, gw)
+    else:
+        teamId = sys.argv[3]
+        getTeam(leagueId, gw, teamId)
