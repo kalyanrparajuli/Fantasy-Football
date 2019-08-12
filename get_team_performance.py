@@ -32,7 +32,7 @@ def simulate_team_points(leagueId, gw, niter=1000):
         new_players_frame = all_players_params[all_players_params['player'].isin(tm_players)]
         new_players_frame = new_players_frame.reset_index()
 		
-        C, S = ComputeExpectedPoints(fixture_list_this_gw, teams, new_players_frame, all_teams_params, Niter=niter)
+        C, S = ComputeExpectedPoints(fixture_list_this_gw, teams, new_players_frame, all_teams_params, Niter=niter, zerooutbottom=(np.max([len(new_players_frame.index) - 11, 0])))
 
         tm_exp[j] = np.sum(C)
         tm_std[j] = np.sqrt(np.sum(S ** 2))
