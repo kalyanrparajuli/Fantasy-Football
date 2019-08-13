@@ -37,3 +37,13 @@ p_prior_a_m = 1
 p_prior_b_m = 1
 p_prior_a_f = 1
 p_prior_b_f = 1
+
+# prior for tackles and interception (totals)
+t_prior_a_g = 1. / 90.
+t_prior_b_g = 10
+t_prior_a_d = 1. / 90.
+t_prior_b_d = 1
+t_prior_a_m = 1. / 90.
+t_prior_b_m = 1
+t_prior_a_f = 1. / 90.
+t_prior_b_f = 2

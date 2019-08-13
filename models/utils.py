@@ -317,6 +317,9 @@ def update_goals_and_assists_simplex(prior_a, prior_b, prior_c, goals, assists, 
 def update_mins_simplex(prior_a, prior_b, mins_per_season, games_played, ff=1):
     return((prior_a * ff) + mins_per_season, (prior_b * ff) + games_played)
 
+def update_tir_simplex(prior_a, prior_b, tir_per_season, games_played, ff=1):
+    return((prior_a * ff) + tir_per_season, (prior_b * ff) + games_played)
+
 def update_games_played_simplex(prior_a, prior_b, games_played, games_not_played, ff=1):
     return((prior_a * ff) + games_played, (prior_b * ff) + games_not_played)
 
@@ -337,6 +340,9 @@ def sample_mins_played(a, b, a_games, b_games, starting=None):
         return(np.min([np.random.poisson(np.random.gamma(a, 1 / b)), 90]))
     elif starting == False:
         return(0)
+
+def sample_tir_points(a, b, mins_played):
+    return(np.floor(np.random.poisson(mins_played * np.random.gamma(a, 1 / b)) / 2.0))
 
 def sample_goals_and_assists(a, b, c, n, mins_played):
     t_goals = np.random.uniform(0, 90, n)  # times of goals
@@ -370,6 +376,7 @@ def ComputeExpectedPoints(fixtures_list, teams, all_players_params, all_teams_pa
     clean_sheets = np.zeros((Niter, len(all_players_params.index)))
     goals_scored = np.zeros((Niter, len(all_players_params.index)))
     mplayed = np.zeros((Niter, len(all_players_params.index)))
+    kb = np.zeros((Niter, len(all_players_params.index)))
 
     # mean and std of team hyperparameters
     intercept = (all_teams_params.as_matrix())[0, :]
@@ -396,19 +403,22 @@ def ComputeExpectedPoints(fixtures_list, teams, all_players_params, all_teams_pa
             # find all players in these teams
             h_players = get_players(all_players_params, h_team)
             a_players = get_players(all_players_params, a_team)
+			
+            # player indicies for bonus points
+            b_points_scalings = np.array([7, 8, 10])  # based on previous seasons thresholds for bonus points
             
             # loop over players
             for j in range(len(h_players)):
                 
                 # predefine scalings for points
                 if all_players_params.loc[all_players_params.index[h_players[j]], 'position'] == "GKP":
-                    scaling = np.array([6., 3., 4.])
+                    scaling = np.array([6., 3., 4., 0.])
                 if all_players_params.loc[all_players_params.index[h_players[j]], 'position'] == "DEF":
-                    scaling = np.array([6., 3., 4.])
+                    scaling = np.array([6., 3., 4., 0.])
                 if all_players_params.loc[all_players_params.index[h_players[j]], 'position'] == "MID":
-                    scaling = np.array([5., 3., 1.])
+                    scaling = np.array([5., 3., 1., 1.])
                 if all_players_params.loc[all_players_params.index[h_players[j]], 'position'] == "FWD":
-                    scaling = np.array([4., 3., 0.])
+                    scaling = np.array([4., 3., 0., 1.])
                 
                 # sample mins played
                 mins_played = sample_mins_played(all_players_params.loc[all_players_params.index[h_players[j]], 'a_mins'],
@@ -420,25 +430,32 @@ def ComputeExpectedPoints(fixtures_list, teams, all_players_params, all_teams_pa
                                                          all_players_params.loc[all_players_params.index[h_players[j]], 'b_goals'],
                                                          all_players_params.loc[all_players_params.index[h_players[j]], 'c_goals'],
                                                          h_n, mins_played)
-                points[l, h_players[j]] += ((goa * scaling[0]) + (assi * scaling[1]))  # goals and assists
+                
+                tir_points = sample_tir_points(all_players_params.loc[all_players_params.index[h_players[j]], 'a_tir'],
+                                               all_players_params.loc[all_players_params.index[h_players[j]], 'b_tir'], mins_played) * scaling[3]
+                gw_points = 0
+                gw_points += ((goa * scaling[0]) + (assi * scaling[1]))  # goals and assists
                 csp = sample_clean_sheet_points(a_n, mins_played)
-                points[l, h_players[j]] += ((scaling[2] * csp) +
-                                            (sample_mins_points(mins_played)))
+                gw_points += ((scaling[2] * csp) + (sample_mins_points(mins_played)))
+                points[l, h_players[j]] += gw_points
+                points[l, h_players[j]] += np.max(np.concatenate((np.array([0]),
+                                                                  1 + np.where((b_points_scalings <= gw_points) == 1)[0]))) + tir_points # kante bonus after bonus
                 clean_sheets[l, h_players[j]] += csp
                 goals_scored[l, h_players[j]] += goa
                 mplayed[l, h_players[j]] += mins_played
+                kb[l, h_players[j]] += tir_points
             
             for j in range(len(a_players)):
                 
                 # predefine scalings for points
                 if all_players_params.loc[all_players_params.index[a_players[j]], 'position'] == "GKP":
-                    scaling = np.array([6., 3., 4.])
+                    scaling = np.array([6., 3., 4., 0.])
                 if all_players_params.loc[all_players_params.index[a_players[j]], 'position'] == "DEF":
-                    scaling = np.array([6., 3., 4.])
+                    scaling = np.array([6., 3., 4., 0.])
                 if all_players_params.loc[all_players_params.index[a_players[j]], 'position'] == "MID":
-                    scaling = np.array([5., 3., 1.])
+                    scaling = np.array([5., 3., 1., 1.])
                 if all_players_params.loc[all_players_params.index[a_players[j]], 'position'] == "FWD":
-                    scaling = np.array([4., 3., 0.])
+                    scaling = np.array([4., 3., 0., 1.])
                 
                 # sample mins played
                 mins_played = sample_mins_played(all_players_params.loc[all_players_params.index[a_players[j]], 'a_mins'],
@@ -450,13 +467,20 @@ def ComputeExpectedPoints(fixtures_list, teams, all_players_params, all_teams_pa
                                                          all_players_params.loc[all_players_params.index[a_players[j]], 'b_goals'],
                                                          all_players_params.loc[all_players_params.index[a_players[j]], 'c_goals'],
                                                          a_n, mins_played)
-                points[l, a_players[j]] += ((goa * scaling[0]) + (assi * scaling[1]))  # goals and assists
+														 
+                tir_points = sample_tir_points(all_players_params.loc[all_players_params.index[a_players[j]], 'a_tir'],
+                                               all_players_params.loc[all_players_params.index[a_players[j]], 'b_tir'], mins_played) * scaling[3]
+                gw_points = 0
+                gw_points += ((goa * scaling[0]) + (assi * scaling[1]))  # goals and assists
                 csp = sample_clean_sheet_points(h_n, mins_played)
-                points[l, a_players[j]] += ((scaling[2] * csp) +
-                                            (sample_mins_points(mins_played)))
+                gw_points += ((scaling[2] * csp) + (sample_mins_points(mins_played)))
+                points[l, a_players[j]] += gw_points
+                points[l, a_players[j]] += np.max(np.concatenate((np.array([0]),
+                                                                  1 + np.where((b_points_scalings <= gw_points) == 1)[0]))) + tir_points  # kante bonus after bonus
                 clean_sheets[l, a_players[j]] += csp
                 goals_scored[l, a_players[j]] += goa
                 mplayed[l, a_players[j]] += mins_played
+                kb[l, a_players[j]] += tir_points
 
         print('---')
         print('Realisation ', l)
@@ -472,9 +496,10 @@ def ComputeExpectedPoints(fixtures_list, teams, all_players_params, all_teams_pa
     cs = np.mean(clean_sheets, axis=0)
     gs = np.mean(goals_scored, axis=0)
     mp = np.mean(mplayed, axis=0)
+    kbm = np.mean(kb, axis=0)
 
     if additionalstats:
-        return(expected_points, sd_points, cs, gs, mp)
+        return(expected_points, sd_points, cs, gs, mp, kbm)
     else:
         return(expected_points, sd_points)
 

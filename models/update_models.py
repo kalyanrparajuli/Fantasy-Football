@@ -119,19 +119,23 @@ def update_player_model(gw, ffgoals, ffmins, ffgames, save_to_csv=True, raw_play
             if positionnew == 'GKP':
                 all_players_parameters = all_players_parameters.append({'ID': idnew, 'a_goals': ga_prior_a_g, 'a_mins': m_prior_a_g, 'b_goals': ga_prior_b_g,
                                                'b_mins': m_prior_b_g, 'a_games': p_prior_a_g, 'b_games': p_prior_b_g, 'c_goals': ga_prior_c_g, 'last_season': current_season,
-                                               'player': namenew, 'position': positionnew, 'team': teamnew}, ignore_index=True)
+                                               'player': namenew, 'position': positionnew, 'team': teamnew,
+                                               'a_tir': t_prior_a_g, 'b_tir': t_prior_b_g}, ignore_index=True)
             if positionnew == 'DEF':
                 all_players_parameters = all_players_parameters.append({'ID': idnew, 'a_goals': ga_prior_a_d, 'a_mins': m_prior_a_d, 'b_goals': ga_prior_b_d,
                                                'b_mins': m_prior_b_d, 'a_games': p_prior_a_d, 'b_games': p_prior_b_d, 'c_goals': ga_prior_c_d, 'last_season': current_season,
-                                               'player': namenew, 'position': positionnew, 'team': teamnew}, ignore_index=True)
+                                               'player': namenew, 'position': positionnew, 'team': teamnew,
+                                               'a_tir': t_prior_a_d, 'b_tir': t_prior_b_d}, ignore_index=True)
             if positionnew == 'MID':
                 all_players_parameters = all_players_parameters.append({'ID': idnew, 'a_goals': ga_prior_a_m, 'a_mins': m_prior_a_m, 'b_goals': ga_prior_b_m,
                                                'b_mins': m_prior_b_m, 'a_games': p_prior_a_m, 'b_games': p_prior_b_m, 'c_goals': ga_prior_c_m, 'last_season': current_season,
-                                               'player': namenew, 'position': positionnew, 'team': teamnew}, ignore_index=True)
+                                               'player': namenew, 'position': positionnew, 'team': teamnew,
+                                               'a_tir': t_prior_a_m, 'b_tir': t_prior_b_m}, ignore_index=True)
             if positionnew == 'FWD':
                 all_players_parameters = all_players_parameters.append({'ID': idnew, 'a_goals': ga_prior_a_f, 'a_mins': m_prior_a_f, 'b_goals': ga_prior_b_f,
                                                'b_mins': m_prior_b_f, 'a_games': p_prior_a_f, 'b_games': p_prior_b_f, 'c_goals': ga_prior_c_f, 'last_season': current_season,
-                                               'player': namenew, 'position': positionnew, 'team': teamnew}, ignore_index=True)
+                                               'player': namenew, 'position': positionnew, 'team': teamnew,
+                                               'a_tir': t_prior_a_f, 'b_tir': t_prior_b_f}, ignore_index=True)
     
         # update all_players params
         new_ind = np.where(all_players_parameters['player'] == data.loc[data.index[i], 'name'])[0][0]  # index now all_players_params is appended
@@ -140,10 +144,17 @@ def update_player_model(gw, ffgoals, ffmins, ffgames, save_to_csv=True, raw_play
         mns = data.loc[data.index[i], 'mp']
         tgoa = np.ceil(data.loc[data.index[i], 'goals_for'] * (data.loc[data.index[i], 'mp'] / 90.))
         gms = data.loc[data.index[i], 'mp'] > 0
+        if gms == 1: 
+            tir = (data.loc[data.index[i], 'i'] + data.loc[data.index[i], 't']) / data.loc[data.index[i], 'mp']
+        else:
+            tir = 0
     
         post_a_goals, post_b_goals, post_c_goals = update_goals_and_assists_simplex(all_players_parameters.loc[all_players_parameters.index[new_ind], 'a_goals'],
                                                                                     all_players_parameters.loc[all_players_parameters.index[new_ind], 'b_goals'],
                                                                                     all_players_parameters.loc[all_players_parameters.index[new_ind], 'c_goals'], goa, assi, tgoa, ffgoals)
+        post_a_tir, post_b_tir = update_tir_simplex(all_players_parameters.loc[all_players_parameters.index[new_ind], 'a_tir'],
+                                                    all_players_parameters.loc[all_players_parameters.index[new_ind], 'b_tir'],
+                                                    tir, gms, ffgoals)
         post_a_mins, post_b_mins = update_mins_simplex(all_players_parameters.loc[all_players_parameters.index[new_ind], 'a_mins'],
                                                        all_players_parameters.loc[all_players_parameters.index[new_ind], 'b_mins'], mns, gms, ffmins)
         post_a_played, post_b_played = update_games_played_simplex(all_players_parameters.loc[all_players_parameters.index[new_ind], 'a_games'],
@@ -156,7 +167,9 @@ def update_player_model(gw, ffgoals, ffmins, ffgames, save_to_csv=True, raw_play
         all_players_parameters.loc[all_players_parameters.index[new_ind], 'b_mins'] = post_b_mins
         all_players_parameters.loc[all_players_parameters.index[new_ind], 'a_games'] = post_a_played
         all_players_parameters.loc[all_players_parameters.index[new_ind], 'b_games'] = post_b_played
-	
+        all_players_parameters.loc[all_players_parameters.index[new_ind], 'a_tir'] = post_a_tir
+        all_players_parameters.loc[all_players_parameters.index[new_ind], 'b_tir'] = post_b_tir
+		
     if save_to_csv:
         print('saving new player parameters to csv....')
         all_players_parameters.to_csv("../parameters/all_players_params.csv", index=False)
