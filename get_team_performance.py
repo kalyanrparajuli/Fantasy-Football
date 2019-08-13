@@ -5,6 +5,7 @@ from get_api import *
 import pandas as pd
 sys.path.append('./models')
 from utils import *
+from scipy.stats import mode
 
 def simulate_team_points(leagueId, gw, niter=1000):
     
@@ -22,6 +23,8 @@ def simulate_team_points(leagueId, gw, niter=1000):
     # find expected points
     tm_exp = np.zeros(len(team_ids))
     tm_std = np.zeros(len(team_ids))
+    tm_median = np.zeros(len(team_ids))
+    tm_75 = np.zeros(len(team_ids))
     for j in range(len(team_ids)):
 
         tm_players_id = getTeam(leagueId, gw, team_ids[j])[2]
@@ -32,10 +35,22 @@ def simulate_team_points(leagueId, gw, niter=1000):
         new_players_frame = all_players_params[all_players_params['player'].isin(tm_players)]
         new_players_frame = new_players_frame.reset_index()
 		
-        C, S = ComputeExpectedPoints(fixture_list_this_gw, teams, new_players_frame, all_teams_params, Niter=niter, zerooutbottom=(np.max([len(new_players_frame.index) - 11, 0])))
+        tm_s = 0
+        tm_sq = 0
+        scores = np.zeros(niter)
 
-        tm_exp[j] = np.sum(C)
-        tm_std[j] = np.sqrt(np.sum(S ** 2))
+        for k in range(niter):
+		
+            C, S = ComputeExpectedPoints(fixture_list_this_gw, teams, new_players_frame, all_teams_params, Niter=1, zerooutbottom=(np.max([len(new_players_frame.index) - 11, 0])))
+
+            tm_s += np.sum(C)
+            scores[k] = np.sum(C)
+            tm_sq += np.sum(C) ** 2
+		
+        tm_exp[j] = tm_s / niter
+        tm_std[j] = np.sqrt((tm_sq / niter) - (tm_exp[j] ** 2))
+        tm_median[j] = np.median(scores)
+        tm_75[j] = np.quantile(scores, 0.75)
 	
     # display (and team ids)
     match = np.array(matches)
@@ -48,7 +63,7 @@ def simulate_team_points(leagueId, gw, niter=1000):
                     win_perc[i] = match_prob(tm_exp[i], tm_std[i], tm_exp[np.where(other_ind[0] == np.array(team_ids))[0].astype(int)], tm_std[np.where(other_ind[0] == np.array(team_ids))[0].astype(int)])
                 else:
                     win_perc[i] = match_prob(tm_exp[i], tm_std[i], np.mean(np.delete(tm_exp, i)), np.mean(np.delete(tm_std, i)))
-    df = pd.DataFrame({ "Id": team_ids, "User": users, "Expected Score": tm_exp, "Standard Deviation Score": tm_std, "Win Percentage": win_perc * 100})
+    df = pd.DataFrame({ "Id": team_ids, "User": users, "Median Score": tm_median, "75% Q": tm_75, "Exp Score": tm_exp, "Std Score": tm_std, "Win Percentage": win_perc * 100})
 
     print('===========================================================================================')
     print('===========================================================================================')
