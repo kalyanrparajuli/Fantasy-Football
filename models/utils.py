@@ -14,7 +14,7 @@ import sys
 sys.path.append('../')
 from get_team_api import *
 
-def EstimateParameters(fixture_list_1, fixture_list_2, fixture_list_3,
+def EstimateParameters(fixture_lists,
                        teams, beta, thetapriormeans, thetapriorsds,
                        niter=1000, log=False, temp=0, zerooutinds=np.array([])):
     
@@ -82,7 +82,7 @@ def EstimateParameters(fixture_list_1, fixture_list_2, fixture_list_3,
         prioreval = np.zeros(len(theta))
         for k in range(len(theta)):
             prioreval[k] = norm.pdf(theta[k], thetapriormeans[k], thetapriorsds[k])
-        Htheta = likelihood_three_seasons(fixture_list_1, fixture_list_2, fixture_list_3,
+        Htheta = likelihood_all_seasons(fixture_lists,
                                           teams, intercept, mu, a, d) + np.sum(np.log(prioreval))
         
         intercept = thetastar[0]
@@ -97,7 +97,7 @@ def EstimateParameters(fixture_list_1, fixture_list_2, fixture_list_3,
         prioreval = np.zeros(len(thetastar))
         for k in range(len(thetastar)):
             prioreval[k] = norm.pdf(thetastar[k], thetapriormeans[k], thetapriorsds[k])
-        Hthetastar = likelihood_three_seasons(fixture_list_1, fixture_list_2, fixture_list_3,
+        Hthetastar = likelihood_all_seasons(fixture_lists,
                                               teams, intercept, mu, a, d) + np.sum(np.log(prioreval))
         
         alpha = np.min([0, (1 / T) * (Hthetastar - Htheta)])
@@ -165,8 +165,10 @@ def likelihood_season(fixtures_list, teams, intercept, mu, a, d):
     return(np.sum(np.log(likelihood)))
 
 # likelihood over three seasons - weighted
-def likelihood_three_seasons(fixture_list_1, fixture_list_2, fixture_list_3, teams, intercept, mu, a, d):
-    likelihood = (0.2 * likelihood_season(fixture_list_1, teams, intercept, mu, a, d)) + (0.3 * likelihood_season(fixture_list_2, teams, intercept, mu, a, d)) + (0.5 * likelihood_season(fixture_list_3, teams, intercept, mu, a, d))
+def likelihood_all_seasons(fixture_lists, teams, intercept, mu, a, d):
+    likelihood = 0
+    for fixture_list in fixture_lists:
+        likelihood = likelihood + ((1.0 / len(fixture_lists)) * likelihood_season(fixture_list, teams, intercept, mu, a, d))
     return(likelihood)
 
 # function to predict probabilities of fixtures
