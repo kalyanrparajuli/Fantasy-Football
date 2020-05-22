@@ -142,7 +142,10 @@ def update_player_model(gw, ffgoals, ffmins, ffgames, save_to_csv=True, raw_play
         goa = data.loc[data.index[i], 'gs']
         assi = data.loc[data.index[i], 'a']
         mns = data.loc[data.index[i], 'mp']
-        tgoa = np.ceil(data.loc[data.index[i], 'goals_for'] * (data.loc[data.index[i], 'mp'] / 90.))
+        if goa >= np.ceil(data.loc[data.index[i], 'goals_for'] * (data.loc[data.index[i], 'mp'] / 90.)):
+            tgoa = data.loc[data.index[i], 'goals_for']
+        else:
+            tgoa = np.ceil(data.loc[data.index[i], 'goals_for'] * (data.loc[data.index[i], 'mp'] / 90.))
         gms = data.loc[data.index[i], 'mp'] > 0
         if gms == 1: 
             tir = (data.loc[data.index[i], 'i'] + data.loc[data.index[i], 't']) / data.loc[data.index[i], 'mp']

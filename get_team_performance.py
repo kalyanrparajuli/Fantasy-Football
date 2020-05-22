@@ -6,6 +6,7 @@ import pandas as pd
 sys.path.append('./models')
 from utils import *
 from scipy.stats import mode
+import seaborn as sns
 
 def simulate_team_points(leagueId, gw, niter=1000):
     
@@ -38,6 +39,8 @@ def simulate_team_points(leagueId, gw, niter=1000):
         tm_s = 0
         tm_sq = 0
         scores = np.zeros(niter)
+        CS = 0
+        SS = 0
 
         for k in range(niter):
 		
@@ -46,6 +49,12 @@ def simulate_team_points(leagueId, gw, niter=1000):
             tm_s += np.sum(C)
             scores[k] = np.sum(C)
             tm_sq += np.sum(C) ** 2
+			
+            CS += C
+            SS += C ** 2
+		
+        print('Team Name: ', users[j])
+        print(pd.DataFrame({"Player": new_players_frame['player'], "Expected Points": CS / niter, "Std Points": np.sqrt((SS / niter) - ((CS / niter) ** 2))}).head(20))
 		
         tm_exp[j] = tm_s / niter
         tm_std[j] = np.sqrt((tm_sq / niter) - (tm_exp[j] ** 2))
@@ -68,6 +77,33 @@ def simulate_team_points(leagueId, gw, niter=1000):
     print('===========================================================================================')
     print('===========================================================================================')
     print(df)
+	
+	# plotting match outcomes
+    users = list(users)
+    users.append('Average Team')
+    tm_exp = list(tm_exp)
+    tm_std = list(tm_std)
+    tm_exp.append(np.mean(np.array(tm_exp)))
+    tm_std.append(np.std(np.array(tm_exp)) / np.sqrt(len(tm_exp)))
+    for i in range(len(matches)):
+        indss = []
+        if len(matches[i]) == 1:
+            indss.append(np.where(matches[i][0] == np.array(team_ids))[0][0])
+            indss.append(len(users) - 1)
+            tm1 = users[indss[0]]
+            tm2 = users[indss[1]]
+        else:
+            indss.append(np.where(matches[i][0] == np.array(team_ids))[0][0])
+            indss.append(np.where(matches[i][1] == np.array(team_ids))[0][0])
+            tm1 = users[indss[0]]
+            tm2 = users[indss[1]]
+        p1=sns.kdeplot(np.random.normal(tm_exp[indss[0]], tm_std[indss[0]], 100000), shade=True, color="r", bw=0.5)
+        p1=sns.kdeplot(np.random.normal(tm_exp[indss[1]], tm_std[indss[1]], 100000), shade=True, color="b", bw=0.5)
+        plot.xlabel("points")
+        plot.title(users[indss[0]] + " (red) vs " + users[indss[1]] + " (blue)")
+        plot.ylabel('frequency density')
+        plot.show()
+
 
 ' Run '
 if __name__ == "__main__":

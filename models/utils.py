@@ -6,6 +6,7 @@ from scipy.stats import norm
 from scipy.stats import gamma
 from scipy.stats import beta
 from scipy.stats import dirichlet
+from scipy.stats import skellam
 import pandas as pd
 import itertools
 import matplotlib.pyplot as plot
@@ -136,9 +137,8 @@ def EstimateParameters(fixture_list_1, fixture_list_2, fixture_list_3,
 def likelihood_one_game(goals_ht, goals_at, intercept, mu, a_ht, d_ht, a_at, d_at):
     lambda_ht = np.exp(intercept + mu + a_ht + d_at)
     lambda_at = np.exp(intercept + a_at + d_ht)
-    p1 = poisson.pmf(goals_ht, lambda_ht)
-    p2 = poisson.pmf(goals_at, lambda_at)
-    return(p1 * p2)
+    p = skellam.pmf(goals_ht - goals_at, lambda_ht, lambda_at)
+    return(p)
 
 # create likelihood eval for single season
 def likelihood_season(fixtures_list, teams, intercept, mu, a, d):
@@ -482,8 +482,8 @@ def ComputeExpectedPoints(fixtures_list, teams, all_players_params, all_teams_pa
                 mplayed[l, a_players[j]] += mins_played
                 kb[l, a_players[j]] += tir_points
 
-        print('---')
-        print('Realisation ', l)
+        #print('---')
+        #print('Realisation ', l)
         #print('Top Points Scorers: ', all_players_params.loc[all_players_params.index[np.argsort(points[l, :])[-5:].astype(int)], 'player'],
         #      ' with ', np.sort(points[l, :])[-5:], ' points')
 
