@@ -16,7 +16,7 @@ from get_team_api import *
 
 def EstimateParameters(fixture_lists,
                        teams, beta, thetapriormeans, thetapriorsds,
-                       niter=1000, log=False, temp=0, zerooutinds=np.array([])):
+                       niter=1000, log=False, temp=0, zerooutinds=np.array([]), forgetting_factor = 1):
     
     # xdata and ydata are coordinates and y values of data
     # xmodel are coordinates of model evaluations
@@ -51,7 +51,7 @@ def EstimateParameters(fixture_lists,
     for j in range(niter):
         
         # temperature
-        T = np.exp(-temp * ((i + 1) / niter))
+        T = np.exp(-temp * ((j + 1) / niter))
         
         if log:
             if hasattr(thetapriormeans, '__len__'):
@@ -83,7 +83,7 @@ def EstimateParameters(fixture_lists,
         for k in range(len(theta)):
             prioreval[k] = norm.pdf(theta[k], thetapriormeans[k], thetapriorsds[k])
         Htheta = likelihood_all_seasons(fixture_lists,
-                                          teams, intercept, mu, a, d) + np.sum(np.log(prioreval))
+                                          teams, intercept, mu, a, d, forgetting_factor = forgetting_factor) + np.sum(np.log(prioreval))
         
         intercept = thetastar[0]
         mu = thetastar[1]
@@ -98,7 +98,7 @@ def EstimateParameters(fixture_lists,
         for k in range(len(thetastar)):
             prioreval[k] = norm.pdf(thetastar[k], thetapriormeans[k], thetapriorsds[k])
         Hthetastar = likelihood_all_seasons(fixture_lists,
-                                              teams, intercept, mu, a, d) + np.sum(np.log(prioreval))
+                                              teams, intercept, mu, a, d, forgetting_factor = forgetting_factor) + np.sum(np.log(prioreval))
         
         alpha = np.min([0, (1 / T) * (Hthetastar - Htheta)])
         
@@ -141,7 +141,7 @@ def likelihood_one_game(goals_ht, goals_at, intercept, mu, a_ht, d_ht, a_at, d_a
     return(p)
 
 # create likelihood eval for single season
-def likelihood_season(fixtures_list, teams, intercept, mu, a, d):
+def likelihood_season(fixtures_list, teams, intercept, mu, a, d, forgetting_factor = 1, n_start = 38):
     N = np.shape(fixtures_list)[0]
     goals_ht = fixtures_list[:, 2]
     goals_at = fixtures_list[:, 3]
@@ -151,24 +151,30 @@ def likelihood_season(fixtures_list, teams, intercept, mu, a, d):
     teams_for_season = np.unique(teams_ht)
     team_count = np.zeros(20)
     likelihood = np.zeros(N)
+    total_weight = 0
     for i in range(N):
         ind_ht = np.where(teams == teams_ht[i])[0][0].astype(int)
         ind_at = np.where(teams == teams_at[i])[0][0].astype(int)
         ind_for_season_ht = np.where(teams_for_season == teams_ht[i])[0][0].astype(int)
         ind_for_season_at = np.where(teams_for_season == teams_at[i])[0][0].astype(int)
-        l = likelihood_one_game(goals_ht[i], goals_at[i],
-                                intercept, mu, a[ind_ht], d[ind_ht], a[ind_at], d[ind_at])
+        likelihood_adjustment = (forgetting_factor ** (n_start - np.min([team_count[np.where(teams_for_season == teams_ht[i])[0][0].astype(int)], team_count[np.where(teams_for_season == teams_at[i])[0][0].astype(int)]])))
+        total_weight += likelihood_adjustment
+        l = np.log(likelihood_one_game(goals_ht[i], goals_at[i],
+                                intercept, mu, a[ind_ht], d[ind_ht], a[ind_at], d[ind_at])) * likelihood_adjustment
         team_count[np.where(teams_for_season == teams_ht[i])[0][0].astype(int)] += 1
         team_count[np.where(teams_for_season == teams_at[i])[0][0].astype(int)] += 1
         likelihood[i] = l
     
-    return(np.sum(np.log(likelihood)))
+    return(np.sum(likelihood) / total_weight)
 
 # likelihood over three seasons - weighted
-def likelihood_all_seasons(fixture_lists, teams, intercept, mu, a, d):
+def likelihood_all_seasons(fixture_lists, teams, intercept, mu, a, d, forgetting_factor = 1):
     likelihood = 0
-    for fixture_list in fixture_lists:
-        likelihood = likelihood + ((1.0 / len(fixture_lists)) * likelihood_season(fixture_list, teams, intercept, mu, a, d))
+    n_start = 38
+    fixture_lists.reverse() # from latest to oldest
+    for fixture_list in fixture_lists: 
+        likelihood = likelihood + ((1.0 / len(fixture_lists)) * likelihood_season(fixture_list, teams, intercept, mu, a, d, n_start = n_start, forgetting_factor = forgetting_factor))
+        n_start = n_start + 38  # increase season
     return(likelihood)
 
 # function to predict probabilities of fixtures
