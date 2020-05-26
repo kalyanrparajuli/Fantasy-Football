@@ -225,7 +225,7 @@ EstimateParameters <- function(fixture_lists, teams, beta, thetapriormeans,
 
 compute_likelihood <- function(fixture_lists, teams, intercept, mu, attack, defence, forgetting_factor = 0) {
   
-  date <- as.Date(fixture_lists[, 'Date'])
+  date <- as.Date(fixture_lists[, 'Date'], format = "%d/%m/%Y")
   
   # define home and away inds
   home_ind <- match(fixture_lists[, 'Home Team'], teams)
