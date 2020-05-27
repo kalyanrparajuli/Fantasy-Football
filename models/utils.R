@@ -247,7 +247,7 @@ compute_likelihood <- function(fixture_lists, teams, intercept, mu, attack, defe
   away_lambdas <- exp(away_attack + home_defence + intercept)
   
   # likelihood
-  likelihood <- sum(((log(dpois(fixture_lists[, 'Home Goals'], home_lambdas)) + log(dpois(fixture_lists[, 'Away Goals'], away_lambdas))) * scale))
+  likelihood <- sum(((log(dskellam(fixture_lists[, 'Home Goals'] - fixture_lists[, 'Away Goals'], home_lambdas, away_lambdas))) * scale))
   
   return(likelihood)
   
@@ -255,18 +255,18 @@ compute_likelihood <- function(fixture_lists, teams, intercept, mu, attack, defe
 }
 
 compute_ratings <- function(fixture_lists, teams, beta, thetapriormeans = NULL,
-                            thetapriorsds = NULL, niter = 1000, temp = 0, forgetting_factor = 0,
+                            thetapriorsds = NULL, niter = 1000, temp = 0, logu = FALSE, forgetting_factor = 0,
                             zerooutinds = NULL) {
  
   # use non-NULL prior means and sds if updating dynamic rating
   if (length(thetapriormeans) == 0) {
     thetapriormeans <- c(0.15, 0.15, array(0.0, length(teams)), array(0.0, length(teams)))
-    thetapriorsds <- array(0.15, (2 + (2 * length(teams))))
+    thetapriorsds <- array(0.35, (2 + (2 * length(teams))))
   }
   
   # find parameters
   batch <- EstimateParameters(fixture_lists, teams, beta, thetapriormeans = thetapriormeans,
-                     thetapriorsds = thetapriorsds, niter = niter, temp = temp, forgetting_factor = forgetting_factor,
+                     thetapriorsds = thetapriorsds, niter = niter, temp = temp, logu = logu, forgetting_factor = forgetting_factor,
                      zerooutinds = zerooutinds)
   
   # burn in

@@ -21,7 +21,7 @@ teams <- unique(df_train[, "Home Team"])
 
 # compute ratings
 ratings <- compute_ratings(df_train, teams, beta = 0.0007, niter = 90000,
-                           forgetting_factor = 0.003)
+                           forgetting_factor = 0.00)
 
 ratings_df <- data.frame("Teams" = teams, "Mean Attack" = ratings$mean_attack, "Mean Defence" = ratings$mean_defence,
                          "Std Attack" = ratings$sd_attack, "Std Defence" = ratings$sd_defence)
