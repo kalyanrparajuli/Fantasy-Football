@@ -261,7 +261,7 @@ compute_ratings <- function(fixture_lists, teams, beta, thetapriormeans = NULL,
   # use non-NULL prior means and sds if updating dynamic rating
   if (length(thetapriormeans) == 0) {
     thetapriormeans <- c(0.15, 0.15, array(0.0, length(teams)), array(0.0, length(teams)))
-    thetapriorsds <- array(0.35, (2 + (2 * length(teams))))
+    thetapriorsds <- array(0.5, (2 + (2 * length(teams))))
   }
   
   # find parameters
